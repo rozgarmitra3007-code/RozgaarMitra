@@ -1,5 +1,6 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - ENTERPRISE HIGH-SECURITY CORE ENGINE
+ * Candidate Data Isolation (Zero Cross-Candidate Leakage), Admin Role Enforcement,
  * Anti-XSS Sanitization, Anti-Clickjacking, Admin Passcode Brute-Force Rate Limiting (5 Attempts Lockout),
  * Safe In-Memory Storage Protection, Candidate Photo & Resume File Upload, Real Generated 6-Digit Email & Mobile OTP,
  * Secret Invisible Admin Portal (Passcode: Admin@75100), MSME Govt Registration (UDYAM-UP-03-0139326),
@@ -209,11 +210,22 @@ class RozgaarMitraApp {
         }
     }
 
+    // STRICT ACCESS CONTROL & CANDIDATE DATA PRIVACY GUARD
     navigateTo(pageId) {
         const protectedPages = ['profile', 'applications', 'saved', 'notifications'];
+        const adminPages = ['admin-dashboard', 'admin-jobs', 'admin-candidates'];
+
+        // Strict Admin Route Protection
+        if (adminPages.includes(pageId) && this.currentRole !== 'ADMIN') {
+            alert('🚨 Access Denied!\n\nCandidate profiles and application database are strictly protected. Admin authentication required.');
+            this.openAdminLoginModal();
+            return;
+        }
+
+        // Strict Seeker Login Protection
         if (protectedPages.includes(pageId) && !this.currentUser && this.currentRole !== 'ADMIN') {
             this.openAuthModal('email-otp');
-            alert('Please login or register to access candidate profile & applications!');
+            alert('Please login to access your personal candidate profile & applications.');
             return;
         }
 
@@ -864,6 +876,7 @@ class RozgaarMitraApp {
 
     // ADMIN MANAGEMENT ACTIONS
     openNewJobModal() {
+        if (this.currentRole !== 'ADMIN') return;
         document.getElementById('jobEditId').value = '';
         document.getElementById('jobForm').reset();
         document.getElementById('jobModalTitle').textContent = 'Post New Private Job';
@@ -871,6 +884,7 @@ class RozgaarMitraApp {
     }
 
     editJob(jobId) {
+        if (this.currentRole !== 'ADMIN') return;
         const job = this.jobs.find(j => j.id === jobId);
         if (!job) return;
 
@@ -888,6 +902,7 @@ class RozgaarMitraApp {
     }
 
     deleteJob(jobId) {
+        if (this.currentRole !== 'ADMIN') return;
         const job = this.jobs.find(j => j.id === jobId);
         if (!job) return;
 
@@ -901,7 +916,7 @@ class RozgaarMitraApp {
     }
 
     confirmDeleteJob() {
-        if (!this.pendingDeleteJobId) return;
+        if (this.currentRole !== 'ADMIN' || !this.pendingDeleteJobId) return;
 
         const jobId = this.pendingDeleteJobId;
         const job = this.jobs.find(j => j.id === jobId);
@@ -917,6 +932,7 @@ class RozgaarMitraApp {
     }
 
     toggleHiringClosed(jobId) {
+        if (this.currentRole !== 'ADMIN') return;
         const job = this.jobs.find(j => j.id === jobId);
         if (!job) return;
 
@@ -935,6 +951,8 @@ class RozgaarMitraApp {
 
     saveJob(event) {
         event.preventDefault();
+        if (this.currentRole !== 'ADMIN') return;
+
         const editId = document.getElementById('jobEditId').value;
         const title = this.sanitizeHTML(document.getElementById('jobTitle').value);
         const companyName = this.sanitizeHTML(document.getElementById('jobCompany').value);
@@ -971,6 +989,7 @@ class RozgaarMitraApp {
     }
 
     renderAdminJobsTable() {
+        if (this.currentRole !== 'ADMIN') return;
         const tbody = document.getElementById('adminJobsTableBody');
         if (!tbody) return;
 
@@ -1025,6 +1044,7 @@ class RozgaarMitraApp {
         return selected;
     }
 
+    // Strictly Isolated Applications View (Candidate A CANNOT view Candidate B data)
     renderApplicationsView() {
         const container = document.getElementById('applicationsContainer');
         if (!container) return;
@@ -1081,6 +1101,7 @@ class RozgaarMitraApp {
     }
 
     renderAdminDashboard() {
+        if (this.currentRole !== 'ADMIN') return;
         this.updateStatsCounters();
         const tbody = document.getElementById('admRecentAppsTable');
         if (!tbody) return;
@@ -1112,6 +1133,7 @@ class RozgaarMitraApp {
     }
 
     updateAppStatus(appId, newStatus) {
+        if (this.currentRole !== 'ADMIN') return;
         const appObj = this.applications.find(a => a.id === appId);
         if (appObj) {
             appObj.status = newStatus;
@@ -1130,7 +1152,9 @@ class RozgaarMitraApp {
         }
     }
 
+    // Strictly Protected Candidate Database (ONLY Accessible by Secret Passcode Admin)
     filterCandidateDatabase() {
+        if (this.currentRole !== 'ADMIN') return;
         const container = document.getElementById('candidateDatabaseContainer');
         if (!container) return;
 
