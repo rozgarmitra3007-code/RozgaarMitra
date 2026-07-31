@@ -1,7 +1,7 @@
 /**
- * ROZGAAR MITRA (rozgaarmitra.com) - ULTRA-HIGH SCALE PRODUCTION CORE ENGINE
- * Candidate view/apply, Photo & Resume file upload, Real Generated 6-Digit Email & Mobile OTP Verification,
- * Google for Jobs JSON-LD JobPosting Schema (schema.org/JobPosting) & Dynamic Sitemap Integration,
+ * ROZGAAR MITRA (rozgaarmitra.com) - ENTERPRISE HIGH-SECURITY CORE ENGINE
+ * Anti-XSS Sanitization, Anti-Clickjacking, Admin Passcode Brute-Force Rate Limiting (5 Attempts Lockout),
+ * Safe In-Memory Storage Protection, Candidate Photo & Resume File Upload, Real Generated 6-Digit Email & Mobile OTP,
  * Secret Invisible Admin Portal (Passcode: Admin@75100), MSME Govt Registration (UDYAM-UP-03-0139326),
  * Job Management, Hiring Closed controls, and login-gated navbar visibility.
  */
@@ -17,6 +17,8 @@ class RozgaarMitraApp {
         this.candidatePhotoDataUrl = null;
         this.candidateResumeFileName = null;
         this.adminPasscodeSecret = 'Admin@75100'; // Secret Official Admin Password
+        this.failedAdminAttempts = 0;
+        this.adminLockoutTime = 0;
         this.copyrightClickCount = 0;
         this.copyrightClickTimer = null;
         this.searchDebounceTimer = null;
@@ -65,6 +67,17 @@ class RozgaarMitraApp {
         this.updateUserUI();
     }
 
+    // Anti-XSS Security Sanitizer (Neutralizes HTML/Script Injection Attempts)
+    sanitizeHTML(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     // Google for Jobs JSON-LD Schema Generator (schema.org/JobPosting)
     updateGoogleJobPostingSchema() {
         const scriptEl = document.getElementById('jobPostingSchemaScript');
@@ -74,7 +87,7 @@ class RozgaarMitraApp {
             "@context": "https://schema.org/",
             "@type": "JobPosting",
             "title": j.title,
-            "description": j.description || `${j.title} vacancy at ${j.companyName} in ${j.location}. Minimum qualification required: ${j.qualificationRequired}.`,
+            "description": j.description || `${j.title} vacancy at ${j.companyName} in ${j.location}.`,
             "identifier": {
                 "@type": "PropertyValue",
                 "name": "Rozgaar Mitra",
@@ -229,7 +242,7 @@ class RozgaarMitraApp {
         if (pageId === 'admin-candidates') this.filterCandidateDatabase();
     }
 
-    // SECRET INVISIBLE ADMIN LOGIN & PASSCODE VERIFICATION (Admin@75100)
+    // SECRET INVISIBLE ADMIN LOGIN WITH ANTI-BRUTE FORCE RATE LIMITING
     checkAdminHash() {
         if (window.location.hash === '#admin') {
             this.openAdminLoginModal();
@@ -237,22 +250,43 @@ class RozgaarMitraApp {
     }
 
     openAdminLoginModal() {
+        if (Date.now() < this.adminLockoutTime) {
+            const remSeconds = Math.ceil((this.adminLockoutTime - Date.now()) / 1000);
+            alert(`🔒 Security Lockout Active!\n\nToo many failed passcode attempts. Please wait ${remSeconds} seconds before trying again.`);
+            return;
+        }
+
         document.getElementById('adminPasscodeInput').value = '';
         document.getElementById('adminAuthModal').classList.remove('hidden');
     }
 
     verifyAdminPasscode(event) {
         event.preventDefault();
+
+        if (Date.now() < this.adminLockoutTime) {
+            alert('🔒 Security Lockout Active! Please wait before retrying.');
+            return;
+        }
+
         const code = document.getElementById('adminPasscodeInput').value;
         if (code === this.adminPasscodeSecret) {
+            this.failedAdminAttempts = 0;
             this.currentRole = 'ADMIN';
             this.closeModal('adminAuthModal');
             try { history.pushState('', document.title, window.location.pathname); } catch(e){}
             this.updateUserUI();
-            alert('🔒 Secret Access Granted!\n\nAll management options unlocked.');
+            alert('🔒 Secret Security Access Granted!\n\nAll management options unlocked.');
             this.navigateTo('admin-dashboard');
         } else {
-            alert('Incorrect Passcode! Access Denied.');
+            this.failedAdminAttempts++;
+            if (this.failedAdminAttempts >= 5) {
+                this.adminLockoutTime = Date.now() + (15 * 60 * 1000); // 15 Minute Lockout
+                this.closeModal('adminAuthModal');
+                alert('🚨 SECURITY LOCKOUT!\n\n5 Failed Passcode Attempts Detected. Admin Portal locked for 15 minutes to prevent unauthorized access.');
+            } else {
+                const rem = 5 - this.failedAdminAttempts;
+                alert(`Incorrect Passcode! Access Denied.\n\n${rem} attempt(s) remaining before security lockout.`);
+            }
         }
     }
 
@@ -291,7 +325,7 @@ class RozgaarMitraApp {
         container.innerHTML = categories.map(c => `
             <div class="category-card" onclick="app.filterByCategory('${c.name}')">
                 <div class="category-icon"><i class="${c.icon}"></i></div>
-                <h3>${c.name}</h3>
+                <h3>${this.sanitizeHTML(c.name)}</h3>
                 <span class="badge badge-primary mt-2">${c.count}</span>
             </div>
         `).join('');
@@ -432,15 +466,19 @@ class RozgaarMitraApp {
         const isApplied = this.currentUser && this.applications.some(a => a.jobId === job.id && a.candidateEmail === this.currentUser.email);
         const isClosed = job.status === 'HIRING_CLOSED' || job.status === 'VACANCY_FULL';
 
+        const safeTitle = this.sanitizeHTML(job.title);
+        const safeCompany = this.sanitizeHTML(job.companyName);
+        const safeLocation = this.sanitizeHTML(job.location);
+
         return `
             <div class="job-card ${isClosed ? 'hiring-closed-card' : ''}">
                 <div>
                     <div class="flex-between mb-2">
                         <div style="display:flex; align-items:center; gap:0.6rem;">
-                            <div class="job-company-avatar">${job.companyName.substring(0, 2).toUpperCase()}</div>
+                            <div class="job-company-avatar">${safeCompany.substring(0, 2).toUpperCase()}</div>
                             <div>
-                                <strong class="text-sm text-secondary">${job.companyName}</strong>
-                                <h3 style="font-size:1.1rem;">${job.title}</h3>
+                                <strong class="text-sm text-secondary">${safeCompany}</strong>
+                                <h3 style="font-size:1.1rem;">${safeTitle}</h3>
                             </div>
                         </div>
                         <button class="btn btn-icon-only ${isSaved ? 'text-danger' : 'text-muted'}" onclick="app.toggleSaveJob('${job.id}', event)" title="Save Job">
@@ -449,19 +487,19 @@ class RozgaarMitraApp {
                     </div>
 
                     <div class="text-sm text-secondary mb-2">
-                        <span><i class="fa-solid fa-location-dot"></i> ${job.location}</span> • 
-                        <span><i class="fa-solid fa-graduation-cap"></i> ${job.qualificationRequired}</span>
+                        <span><i class="fa-solid fa-location-dot"></i> ${safeLocation}</span> • 
+                        <span><i class="fa-solid fa-graduation-cap"></i> ${this.sanitizeHTML(job.qualificationRequired)}</span>
                     </div>
 
                     ${isClosed ? `<span class="badge badge-danger mb-2"><i class="fa-solid fa-lock"></i> Vacancy Full / Hiring Closed</span>` : ''}
 
                     <div class="job-skills-tags">
-                        ${(job.requiredSkills || []).map(s => `<span class="skill-tag">${s}</span>`).join('')}
+                        ${(job.requiredSkills || []).map(s => `<span class="skill-tag">${this.sanitizeHTML(s)}</span>`).join('')}
                     </div>
                 </div>
 
                 <div class="flex-between pt-3 border-top mt-3">
-                    <span class="salary-text">${job.salary}</span>
+                    <span class="salary-text">${this.sanitizeHTML(job.salary)}</span>
                     <div>
                         <button class="btn btn-outline btn-sm mr-2" onclick="app.renderJobDetail('${job.id}')">Specs</button>
                         ${this.currentRole === 'ADMIN' ? 
@@ -493,22 +531,22 @@ class RozgaarMitraApp {
             <div class="card p-4">
                 <div class="flex-between mb-4">
                     <div>
-                        <span class="badge badge-primary mb-2">${job.category}</span>
+                        <span class="badge badge-primary mb-2">${this.sanitizeHTML(job.category)}</span>
                         ${isClosed ? `<span class="badge badge-danger mb-2 ml-2"><i class="fa-solid fa-lock"></i> Vacancy Full / Hiring Closed</span>` : ''}
-                        <h1>${job.title}</h1>
-                        <p class="text-secondary">${job.companyName} • ${job.location}</p>
+                        <h1>${this.sanitizeHTML(job.title)}</h1>
+                        <p class="text-secondary">${this.sanitizeHTML(job.companyName)} • ${this.sanitizeHTML(job.location)}</p>
                     </div>
-                    <h2 class="text-success">${job.salary}</h2>
+                    <h2 class="text-success">${this.sanitizeHTML(job.salary)}</h2>
                 </div>
                 <div class="form-grid mb-4">
-                    <div><strong>Qualification:</strong> ${job.qualificationRequired}</div>
-                    <div><strong>Experience:</strong> ${job.experienceRequired}</div>
+                    <div><strong>Qualification:</strong> ${this.sanitizeHTML(job.qualificationRequired)}</div>
+                    <div><strong>Experience:</strong> ${this.sanitizeHTML(job.experienceRequired)}</div>
                     <div><strong>Vacancies:</strong> ${job.positions || 2} Positions</div>
                     <div><strong>Status:</strong> <span class="badge ${isClosed ? 'badge-danger' : 'badge-success'}">${isClosed ? 'Vacancy Full / Hiring Closed' : 'Active Vacancy'}</span></div>
                 </div>
                 <div class="mb-4">
                     <h3>Job Description & Key Duties</h3>
-                    <p class="mt-2" style="white-space:pre-line;">${job.description}</p>
+                    <p class="mt-2" style="white-space:pre-line;">${this.sanitizeHTML(job.description)}</p>
                 </div>
                 <div class="flex-between border-top pt-4">
                     <span class="text-muted"><i class="fa-solid fa-shield-halved text-success"></i> Direct Rozgaar Mitra Verified Job</span>
@@ -602,7 +640,7 @@ class RozgaarMitraApp {
         this.candidateResumeFileName = file.name;
         const nameDisplay = document.getElementById('profResumeName');
         if (nameDisplay) {
-            nameDisplay.innerHTML = `<i class="fa-solid fa-file-pdf text-danger"></i> Uploaded: <strong>${file.name}</strong> (${(file.size / 1024).toFixed(1)} KB)`;
+            nameDisplay.innerHTML = `<i class="fa-solid fa-file-pdf text-danger"></i> Uploaded: <strong>${this.sanitizeHTML(file.name)}</strong> (${(file.size / 1024).toFixed(1)} KB)`;
         }
     }
 
@@ -610,12 +648,12 @@ class RozgaarMitraApp {
         event.preventDefault();
         const updated = {
             id: this.currentUser ? this.currentUser.id : 'cand-' + Date.now(),
-            name: document.getElementById('profName').value,
-            email: document.getElementById('profEmail').value,
-            mobile: document.getElementById('profMobile').value,
-            location: document.getElementById('profLocation').value,
-            qualification: document.getElementById('profQualification').value,
-            experienceYears: document.getElementById('profExperience').value,
+            name: this.sanitizeHTML(document.getElementById('profName').value),
+            email: this.sanitizeHTML(document.getElementById('profEmail').value),
+            mobile: this.sanitizeHTML(document.getElementById('profMobile').value),
+            location: this.sanitizeHTML(document.getElementById('profLocation').value),
+            qualification: this.sanitizeHTML(document.getElementById('profQualification').value),
+            experienceYears: this.sanitizeHTML(document.getElementById('profExperience').value),
             skills: this.getSelectedSkillsFromForm(),
             photoUrl: this.candidatePhotoDataUrl || this.currentUser?.photoUrl || null,
             resumeFileName: this.candidateResumeFileName || this.currentUser?.resumeFileName || null
@@ -656,7 +694,7 @@ class RozgaarMitraApp {
             this.candidateResumeFileName = u.resumeFileName;
             const nameDisplay = document.getElementById('profResumeName');
             if (nameDisplay) {
-                nameDisplay.innerHTML = `<i class="fa-solid fa-file-pdf text-danger"></i> Uploaded Resume: <strong>${u.resumeFileName}</strong>`;
+                nameDisplay.innerHTML = `<i class="fa-solid fa-file-pdf text-danger"></i> Uploaded Resume: <strong>${this.sanitizeHTML(u.resumeFileName)}</strong>`;
             }
         }
 
@@ -856,7 +894,7 @@ class RozgaarMitraApp {
         this.pendingDeleteJobId = jobId;
         const textEl = document.getElementById('deleteJobWarningText');
         if (textEl) {
-            textEl.innerHTML = `Are you sure you want to permanently delete the job vacancy <strong>"${job.title}"</strong> (${job.companyName})? This action cannot be undone!`;
+            textEl.innerHTML = `Are you sure you want to permanently delete the job vacancy <strong>"${this.sanitizeHTML(job.title)}"</strong> (${this.sanitizeHTML(job.companyName)})? This action cannot be undone!`;
         }
 
         document.getElementById('deleteConfirmModal').classList.remove('hidden');
@@ -898,13 +936,13 @@ class RozgaarMitraApp {
     saveJob(event) {
         event.preventDefault();
         const editId = document.getElementById('jobEditId').value;
-        const title = document.getElementById('jobTitle').value;
-        const companyName = document.getElementById('jobCompany').value;
+        const title = this.sanitizeHTML(document.getElementById('jobTitle').value);
+        const companyName = this.sanitizeHTML(document.getElementById('jobCompany').value);
         const category = document.getElementById('jobCategory').value;
-        const location = document.getElementById('jobLocation').value;
-        const salary = document.getElementById('jobSalary').value;
+        const location = this.sanitizeHTML(document.getElementById('jobLocation').value);
+        const salary = this.sanitizeHTML(document.getElementById('jobSalary').value);
         const qualificationRequired = document.getElementById('jobQualification').value;
-        const description = document.getElementById('jobDesc').value;
+        const description = this.sanitizeHTML(document.getElementById('jobDesc').value);
 
         if (editId) {
             const idx = this.jobs.findIndex(j => j.id === editId);
@@ -945,10 +983,10 @@ class RozgaarMitraApp {
             const isClosed = j.status === 'HIRING_CLOSED' || j.status === 'VACANCY_FULL';
             return `
                 <tr>
-                    <td><strong>${j.title}</strong><br><small>${j.companyName}</small></td>
-                    <td>${j.category}</td>
-                    <td>${j.location}</td>
-                    <td>${j.salary}</td>
+                    <td><strong>${this.sanitizeHTML(j.title)}</strong><br><small>${this.sanitizeHTML(j.companyName)}</small></td>
+                    <td>${this.sanitizeHTML(j.category)}</td>
+                    <td>${this.sanitizeHTML(j.location)}</td>
+                    <td>${this.sanitizeHTML(j.salary)}</td>
                     <td>
                         <span class="badge ${isClosed ? 'badge-danger' : 'badge-success'}">
                             ${isClosed ? 'Vacancy Full / Hiring Closed' : 'Active Hiring'}
@@ -1010,8 +1048,8 @@ class RozgaarMitraApp {
                 <div class="card p-3 mb-3 flex-between">
                     <div>
                         <span class="badge badge-success mb-2">${a.status}</span>
-                        <h3>${job.title}</h3>
-                        <p class="text-secondary">${job.companyName} • Candidate: <strong>${a.candidateName}</strong> (${a.candidateMobile}) • Applied ${a.appliedAt}</p>
+                        <h3>${this.sanitizeHTML(job.title)}</h3>
+                        <p class="text-secondary">${this.sanitizeHTML(job.companyName)} • Candidate: <strong>${this.sanitizeHTML(a.candidateName)}</strong> (${this.sanitizeHTML(a.candidateMobile)}) • Applied ${a.appliedAt}</p>
                     </div>
                 </div>
             `;
@@ -1035,7 +1073,7 @@ class RozgaarMitraApp {
             <div class="card p-3 mb-2 flex-between">
                 <div>
                     <span class="badge badge-primary mb-1">${n.type}</span>
-                    <p>${n.message}</p>
+                    <p>${this.sanitizeHTML(n.message)}</p>
                     <small class="text-muted">${n.createdAt}</small>
                 </div>
             </div>
@@ -1056,9 +1094,9 @@ class RozgaarMitraApp {
             const job = this.jobs.find(j => j.id === a.jobId) || { title: 'Job' };
             return `
                 <tr>
-                    <td><strong>${a.candidateName}</strong><br><small>${a.candidateEmail}</small></td>
-                    <td>${job.title}</td>
-                    <td>${a.candidateQual}</td>
+                    <td><strong>${this.sanitizeHTML(a.candidateName)}</strong><br><small>${this.sanitizeHTML(a.candidateEmail)}</small></td>
+                    <td>${this.sanitizeHTML(job.title)}</td>
+                    <td>${this.sanitizeHTML(a.candidateQual)}</td>
                     <td>
                         <select class="form-control" style="width:auto;" onchange="app.updateAppStatus('${a.id}', this.value)">
                             <option value="Applied" ${a.status === 'Applied' ? 'selected' : ''}>Applied</option>
@@ -1067,7 +1105,7 @@ class RozgaarMitraApp {
                             <option value="Rejected" ${a.status === 'Rejected' ? 'selected' : ''}>Rejected</option>
                         </select>
                     </td>
-                    <td><button class="btn btn-outline btn-sm" onclick="alert('Candidate: ' + '${a.candidateName}' + '\\nMobile: ' + '${a.candidateMobile}')">View</button></td>
+                    <td><button class="btn btn-outline btn-sm" onclick="alert('Candidate: ' + '${this.sanitizeHTML(a.candidateName)}' + '\\nMobile: ' + '${this.sanitizeHTML(a.candidateMobile)}')">View</button></td>
                 </tr>
             `;
         }).join('');
@@ -1106,17 +1144,17 @@ class RozgaarMitraApp {
                 <div style="display:flex; align-items:center; gap:0.75rem;" class="mb-2">
                     ${c.photoUrl ? 
                         `<img src="${c.photoUrl}" style="width:44px; height:44px; border-radius:50%; object-fit:cover;">` : 
-                        `<div style="width:44px; height:44px; border-radius:50%; background:#002b66; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold;">${c.name.substring(0, 2).toUpperCase()}</div>`
+                        `<div style="width:44px; height:44px; border-radius:50%; background:#002b66; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold;">${this.sanitizeHTML(c.name).substring(0, 2).toUpperCase()}</div>`
                     }
                     <div>
-                        <h3>${c.name}</h3>
-                        <p class="text-secondary text-sm">${c.email} • ${c.mobile}</p>
+                        <h3>${this.sanitizeHTML(c.name)}</h3>
+                        <p class="text-secondary text-sm">${this.sanitizeHTML(c.email)} • ${this.sanitizeHTML(c.mobile)}</p>
                     </div>
                 </div>
-                <p class="text-sm">Qualification: <strong>${c.qualification}</strong></p>
-                ${c.resumeFileName ? `<p class="text-sm text-success mt-1"><i class="fa-solid fa-file-pdf"></i> Resume: ${c.resumeFileName}</p>` : ''}
+                <p class="text-sm">Qualification: <strong>${this.sanitizeHTML(c.qualification)}</strong></p>
+                ${c.resumeFileName ? `<p class="text-sm text-success mt-1"><i class="fa-solid fa-file-pdf"></i> Resume: ${this.sanitizeHTML(c.resumeFileName)}</p>` : ''}
                 <div class="job-skills-tags mt-2">
-                    ${(c.skills || []).map(s => `<span class="skill-tag">${s}</span>`).join('')}
+                    ${(c.skills || []).map(s => `<span class="skill-tag">${this.sanitizeHTML(s)}</span>`).join('')}
                 </div>
             </div>
         `).join('');
