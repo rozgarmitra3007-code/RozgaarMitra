@@ -1,8 +1,10 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - 100% PRODUCTION CORE ENGINE
  * 
- * REAL-TIME CLOUD DATABASE SYNCHRONIZATION ENGINE
+ * LIVE INSTANT REST CLOUD DATABASE SYNCHRONIZATION ENGINE
  */
+
+const CLOUD_CANDIDATES_API_URL = 'https://crudcrud.com/api/8b287d416b074d0a8ee4085edf73d673/candidates';
 
 class RozgaarMitraApp {
     constructor() {
@@ -82,17 +84,17 @@ class RozgaarMitraApp {
                 }
                 this.loadProfileIntoForm();
                 
-                // Auto-sync current user profile to Cloud API
+                // Auto-sync current user profile to Cloud Database
                 await this.pushCandidateToCloudAPI(this.currentUser);
             } catch (e) {
                 console.warn('Session load notice:', e);
             }
         }
 
-        // Cloud API Fetch & Sync
+        // Direct Cloud Database Fetch & Sync
         await this.syncWithCloudAPI();
 
-        // Poll Cloud API every 3 seconds for live candidate updates across all devices
+        // Poll Cloud Database every 3 seconds for live candidate updates across all devices
         setInterval(() => {
             this.syncWithCloudAPI(true);
         }, 3000);
@@ -118,18 +120,19 @@ class RozgaarMitraApp {
         this.updateUserUI();
     }
 
-    // CLOUD API SYNCHRONIZATION ENGINE
+    // DIRECT REAL-TIME CLOUD DATABASE SYNCHRONIZATION ENGINE
     async syncWithCloudAPI(isBackground = false) {
         try {
-            // Fetch Candidates from Cloud API
-            let candRes = await fetch('/api/candidates.js');
-            if (!candRes.ok) candRes = await fetch('/api/candidates');
+            const res = await fetch(CLOUD_CANDIDATES_API_URL);
 
-            if (candRes.ok) {
-                const candData = await candRes.json();
-                if (candData.candidates && Array.isArray(candData.candidates)) {
-                    candData.candidates.forEach(cc => {
-                        const idx = this.candidates.findIndex(c => c.email.toLowerCase() === cc.email.toLowerCase());
+            if (res.ok) {
+                const cloudCandidates = await res.json();
+
+                if (Array.isArray(cloudCandidates) && cloudCandidates.length > 0) {
+                    cloudCandidates.forEach(cc => {
+                        const email = cc.email ? cc.email.toLowerCase() : '';
+                        if (!email) return;
+                        const idx = this.candidates.findIndex(c => c.email && c.email.toLowerCase() === email);
                         if (idx >= 0) {
                             this.candidates[idx] = { ...this.candidates[idx], ...cc };
                         } else {
@@ -140,30 +143,7 @@ class RozgaarMitraApp {
                 }
             }
         } catch(e) {
-            console.warn('Cloud Candidates API Sync notice:', e);
-        }
-
-        try {
-            // Fetch Applications from Cloud API
-            let appRes = await fetch('/api/applications.js');
-            if (!appRes.ok) appRes = await fetch('/api/applications');
-
-            if (appRes.ok) {
-                const appData = await appRes.json();
-                if (appData.applications && Array.isArray(appData.applications)) {
-                    appData.applications.forEach(ca => {
-                        const idx = this.applications.findIndex(a => a.id === ca.id);
-                        if (idx >= 0) {
-                            this.applications[idx] = { ...this.applications[idx], ...ca };
-                        } else {
-                            this.applications.push(ca);
-                        }
-                    });
-                    this.saveStateToStorage();
-                }
-            }
-        } catch(e) {
-            console.warn('Cloud Applications API Sync notice:', e);
+            console.warn('Live Cloud Candidates Sync notice:', e);
         }
 
         this.updateStatsCounters();
@@ -175,41 +155,65 @@ class RozgaarMitraApp {
 
     async pushCandidateToCloudAPI(candidateObj) {
         if (!candidateObj || !candidateObj.email) return;
+
         try {
-            let res = await fetch('/api/candidates.js', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(candidateObj)
-            });
-            if (!res.ok) {
-                await fetch('/api/candidates', {
+            const email = candidateObj.email.toLowerCase().trim();
+
+            const getRes = await fetch(CLOUD_CANDIDATES_API_URL);
+            let existingList = [];
+            if (getRes.ok) existingList = await getRes.json();
+
+            const match = existingList.find(c => c.email && c.email.toLowerCase() === email);
+
+            if (match && match._id) {
+                // Update existing record
+                await fetch(`${CLOUD_CANDIDATES_API_URL}/${match._id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: candidateObj.name,
+                        email: email,
+                        mobile: candidateObj.mobile || 'Not specified',
+                        qualification: candidateObj.qualification || '12th Pass',
+                        experienceYears: candidateObj.experienceYears || 'Fresher',
+                        location: candidateObj.location || 'India',
+                        preferredCategory: candidateObj.preferredCategory || 'General',
+                        preferredCity: candidateObj.preferredCity || 'Delhi NCR',
+                        expectedSalaryMin: candidateObj.expectedSalaryMin || '',
+                        expectedSalaryMax: candidateObj.expectedSalaryMax || '',
+                        skills: candidateObj.skills || ['MS Excel'],
+                        dob: candidateObj.dob || '',
+                        gender: candidateObj.gender || '',
+                        isSuspended: candidateObj.isSuspended || false,
+                        registeredAt: candidateObj.registeredAt || new Date().toISOString().split('T')[0]
+                    })
+                });
+            } else {
+                // Create new record
+                await fetch(CLOUD_CANDIDATES_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(candidateObj)
+                    body: JSON.stringify({
+                        name: candidateObj.name,
+                        email: email,
+                        mobile: candidateObj.mobile || 'Not specified',
+                        qualification: candidateObj.qualification || '12th Pass',
+                        experienceYears: candidateObj.experienceYears || 'Fresher',
+                        location: candidateObj.location || 'India',
+                        preferredCategory: candidateObj.preferredCategory || 'General',
+                        preferredCity: candidateObj.preferredCity || 'Delhi NCR',
+                        expectedSalaryMin: candidateObj.expectedSalaryMin || '',
+                        expectedSalaryMax: candidateObj.expectedSalaryMax || '',
+                        skills: candidateObj.skills || ['MS Excel'],
+                        dob: candidateObj.dob || '',
+                        gender: candidateObj.gender || '',
+                        isSuspended: candidateObj.isSuspended || false,
+                        registeredAt: candidateObj.registeredAt || new Date().toISOString().split('T')[0]
+                    })
                 });
             }
         } catch(e) {
             console.warn('Push Candidate Cloud API notice:', e);
-        }
-    }
-
-    async pushApplicationToCloudAPI(appObj) {
-        if (!appObj || !appObj.candidateEmail) return;
-        try {
-            let res = await fetch('/api/applications.js', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(appObj)
-            });
-            if (!res.ok) {
-                await fetch('/api/applications', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(appObj)
-                });
-            }
-        } catch(e) {
-            console.warn('Push Application Cloud API notice:', e);
         }
     }
 
@@ -923,7 +927,6 @@ class RozgaarMitraApp {
         });
 
         this.saveStateToStorage();
-        this.pushApplicationToCloudAPI(newApp);
         this.notifyRealtimeEvent('APPLICATION_SUBMITTED', newApp);
         alert(`Application for "${job.title}" successfully submitted!`);
         this.navigateTo('applications');
@@ -1112,11 +1115,14 @@ class RozgaarMitraApp {
             this.saveStateToStorage();
 
             try {
-                await fetch('/api/candidates.js', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: candId, email: cand.email })
-                });
+                const getRes = await fetch(CLOUD_CANDIDATES_API_URL);
+                if (getRes.ok) {
+                    const list = await getRes.json();
+                    const match = list.find(c => c.email && c.email.toLowerCase() === cand.email.toLowerCase());
+                    if (match && match._id) {
+                        await fetch(`${CLOUD_CANDIDATES_API_URL}/${match._id}`, { method: 'DELETE' });
+                    }
+                }
             } catch(e){}
 
             this.filterCandidateDatabase();
