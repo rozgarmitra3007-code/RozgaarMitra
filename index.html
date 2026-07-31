@@ -707,16 +707,16 @@
         </a>
     </nav>
 
-    <!-- Auth Modal (Candidates with Email OTP & Registration tabs) -->
+    <!-- Auth Modal (Candidates with Email OTP & Verified Registration tabs) -->
     <div class="modal-backdrop hidden" id="authModal">
         <div class="modal-card">
             <button class="modal-close" onclick="app.closeModal('authModal')"><i class="fa-solid fa-xmark"></i></button>
             <div class="auth-tabs">
-                <button class="auth-tab active" id="tabLoginEmailOtp" onclick="app.switchAuthTab('email-otp')"><i class="fa-solid fa-envelope"></i> Email OTP</button>
-                <button class="auth-tab" id="tabRegister" onclick="app.switchAuthTab('register')"><i class="fa-solid fa-user-plus"></i> Register</button>
+                <button class="auth-tab active" id="tabLoginEmailOtp" onclick="app.switchAuthTab('email-otp')"><i class="fa-solid fa-envelope"></i> Email OTP Login</button>
+                <button class="auth-tab" id="tabRegister" onclick="app.switchAuthTab('register')"><i class="fa-solid fa-user-plus"></i> Candidate Register</button>
             </div>
 
-            <!-- EMAIL OTP VERIFICATION FORM -->
+            <!-- EMAIL OTP VERIFICATION FORM FOR LOGIN -->
             <form id="formEmailOtpLogin" onsubmit="app.handleEmailOtpLogin(event)">
                 <div class="mb-3">
                     <label class="text-sm font-weight-bold">Email Address *</label>
@@ -726,24 +726,31 @@
                     </div>
                 </div>
                 <div class="mb-3 hidden" id="otpEmailCodeGroup">
-                    <label class="text-sm font-weight-bold">Enter 6-Digit Email Verification OTP *</label>
+                    <label class="text-sm font-weight-bold text-success"><i class="fa-solid fa-key"></i> Enter 6-Digit Email Verification OTP *</label>
                     <input type="text" id="otpEmailCode" class="form-control" placeholder="Enter 6-digit Email OTP" maxlength="6">
                 </div>
                 <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-shield-check"></i> Verify Email OTP & Login</button>
             </form>
 
-            <!-- REGISTER FORM -->
+            <!-- REGISTER FORM WITH EMAIL OTP VERIFICATION & DUPLICATE CHECK -->
             <form id="formRegister" class="hidden" onsubmit="app.handleRegister(event)">
                 <div class="mb-3">
-                    <label class="text-sm font-weight-bold">Full Name</label>
+                    <label class="text-sm font-weight-bold">Full Candidate Name *</label>
                     <input type="text" id="regName" class="form-control" required placeholder="Enter full name">
                 </div>
                 <div class="mb-3">
-                    <label class="text-sm font-weight-bold">Email Address</label>
-                    <input type="email" id="regEmail" class="form-control" required placeholder="Enter email address">
+                    <label class="text-sm font-weight-bold">Email Address *</label>
+                    <div style="display:flex; gap:0.5rem;">
+                        <input type="email" id="regEmail" class="form-control" required placeholder="Enter email address">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="app.sendRegEmailOtpCode()"><i class="fa-solid fa-paper-plane"></i> Verify Email</button>
+                    </div>
+                </div>
+                <div class="mb-3 hidden" id="regOtpCodeGroup">
+                    <label class="text-sm font-weight-bold text-success"><i class="fa-solid fa-shield-check"></i> Enter 6-Digit Email OTP *</label>
+                    <input type="text" id="regOtpCode" class="form-control" placeholder="Enter 6-digit Email OTP" maxlength="6">
                 </div>
                 <div class="mb-3">
-                    <label class="text-sm font-weight-bold">Mobile Number</label>
+                    <label class="text-sm font-weight-bold">Mobile Number (+91) *</label>
                     <input type="tel" id="regMobile" class="form-control" required placeholder="Enter 10-digit mobile number">
                 </div>
                 <div class="mb-3 text-sm">
@@ -752,7 +759,7 @@
                         <span>I agree to the <a href="#" onclick="app.closeModal('authModal'); app.navigateTo('terms');">Terms & Conditions</a> and <a href="#" onclick="app.closeModal('authModal'); app.navigateTo('privacy');">Privacy Policy</a></span>
                     </label>
                 </div>
-                <button type="submit" class="btn btn-primary btn-block">Create Candidate Account</button>
+                <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-user-plus"></i> Verify OTP & Register Account</button>
             </form>
         </div>
     </div>

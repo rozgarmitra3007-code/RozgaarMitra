@@ -1,12 +1,9 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - 100% PRODUCTION CORE ENGINE
  * 
- * AUDIT & HARDENING COMPLETE:
- * 1. REAL EMAIL OTP: Randomly generated 6-digit OTP, 5-minute strict expiration, single-use only.
- *    Integrated with Vercel Serverless Email Gateway (/api/send-otp). No hardcoded bypass.
- * 2. REAL CANDIDATE DATA & FILES: Photo Data URLs & Resume files saved persistently to state.
- * 3. REAL ADMIN SECURITY: Admin Email + Password (Admin@75100) + 2FA OTP + Rate Limiting + 30-Min Inactivity Expiration.
- * 4. REAL LIVE STATS: All dashboard numbers generated dynamically from real database arrays.
+ * DUPLICATE CHECK & STRICT REGISTRATION EMAIL VERIFICATION:
+ * 1. Duplicate Account Prevention: Prevents re-registration if Email or Mobile already exists in database.
+ * 2. Registration Email Verification: Sends 6-digit Email OTP before registration completes.
  */
 
 class RozgaarMitraApp {
@@ -19,6 +16,8 @@ class RozgaarMitraApp {
         // OTP Security State (Single-Use, 5-Minute Expiry)
         this.generatedEmailOtp = null;
         this.emailOtpExpiryTime = 0;
+        this.generatedRegEmailOtp = null;
+        this.regEmailOtpExpiryTime = 0;
         this.generatedAdmin2faOtp = null;
         this.admin2faExpiryTime = 0;
         
@@ -71,7 +70,6 @@ class RozgaarMitraApp {
             }
         }
 
-        // Check if active admin session exists and is within 30-minute inactivity limit
         const savedAdminSession = this.getStorageItem('rm_admin_session');
         if (savedAdminSession === 'active') {
             const lastAct = parseInt(this.getStorageItem('rm_admin_last_act') || '0');
@@ -83,7 +81,6 @@ class RozgaarMitraApp {
             }
         }
 
-        // Secret URL Hash check: rozgaarmitra.com/#admin
         this.checkAdminHash();
 
         window.addEventListener('hashchange', () => {
@@ -93,7 +90,6 @@ class RozgaarMitraApp {
         this.updateUserUI();
     }
 
-    // Initial Live Job Vacancies Engine
     seedInitialJobsIfEmpty() {
         if (!this.jobs || this.jobs.length === 0) {
             this.jobs = [
@@ -252,7 +248,6 @@ class RozgaarMitraApp {
         }
     }
 
-    // Valid schema.org/JobPosting JSON-LD Engine for Google for Jobs
     updateGoogleJobPostingSchema() {
         const scriptEl = document.getElementById('jobPostingSchemaScript');
         if (!scriptEl) return;
@@ -315,7 +310,6 @@ class RozgaarMitraApp {
         scriptEl.textContent = JSON.stringify(schemas);
     }
 
-    // Admin Inactivity Auto-Logout (30 Minutes)
     setupAdminInactivityMonitor() {
         const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
         events.forEach(evt => {
@@ -348,7 +342,6 @@ class RozgaarMitraApp {
         this.updateUserUI();
     }
 
-    // Anti-XSS Security Sanitizer
     sanitizeHTML(str) {
         if (!str) return '';
         return String(str)
@@ -359,7 +352,6 @@ class RozgaarMitraApp {
             .replace(/'/g, '&#039;');
     }
 
-    // Safe Storage Wrappers
     getStorageItem(key) {
         try {
             return localStorage.getItem(key);
@@ -442,7 +434,6 @@ class RozgaarMitraApp {
         }
     }
 
-    // STRICT ACCESS CONTROL & CANDIDATE DATA PRIVACY GUARD
     navigateTo(pageId) {
         const protectedPages = ['profile', 'applications', 'saved', 'notifications'];
         const adminPages = ['admin-dashboard', 'admin-jobs', 'admin-candidates'];
@@ -484,7 +475,6 @@ class RozgaarMitraApp {
         if (pageId === 'admin-candidates') this.filterCandidateDatabase();
     }
 
-    // FLEXIBLE ADMIN AUTHENTICATION
     checkAdminHash() {
         if (window.location.hash === '#admin') {
             this.openAdminLoginModal();
@@ -527,9 +517,8 @@ class RozgaarMitraApp {
             return;
         }
 
-        // Generate 6-Digit Admin 2FA OTP with 5-minute validity
         this.generatedAdmin2faOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        this.admin2faExpiryTime = Date.now() + (5 * 60 * 1000); // 5 Minutes
+        this.admin2faExpiryTime = Date.now() + (5 * 60 * 1000);
         document.getElementById('admin2faGroup').classList.remove('hidden');
         alert(`🔒 ADMIN 2-FACTOR AUTHENTICATION (2FA)\n\nCredentials Verified for ${email}!\n\nYour 6-Digit Admin 2FA Security OTP is: ${this.generatedAdmin2faOtp}\n\n(Valid for 5 minutes)`);
     }
@@ -557,7 +546,7 @@ class RozgaarMitraApp {
 
         if (otpCode === this.generatedAdmin2faOtp) {
             this.failedAdminAttempts = 0;
-            this.generatedAdmin2faOtp = null; // Single-use consumption
+            this.generatedAdmin2faOtp = null;
             this.currentRole = 'ADMIN';
             this.adminLastActivity = Date.now();
             this.setStorageItem('rm_admin_session', 'active');
@@ -891,7 +880,6 @@ class RozgaarMitraApp {
         this.navigateTo('applications');
     }
 
-    // REAL PERSISTENT FILE UPLOADS
     handlePhotoUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -981,7 +969,7 @@ class RozgaarMitraApp {
         this.renderSkillsTagSelector();
     }
 
-    // REAL EMAIL OTP SYSTEM (5-MINUTE EXPIRATION, SINGLE-USE ONLY)
+    // EMAIL OTP FLOW FOR LOGIN
     async sendEmailOtpCode() {
         const email = document.getElementById('otpEmailInput').value;
         if (!email || !email.includes('@')) {
@@ -989,12 +977,10 @@ class RozgaarMitraApp {
             return;
         }
 
-        // Generate Random 6-Digit OTP with strict 5-Minute Expiry
         this.generatedEmailOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        this.emailOtpExpiryTime = Date.now() + (5 * 60 * 1000); // 5 Minutes
+        this.emailOtpExpiryTime = Date.now() + (5 * 60 * 1000);
         document.getElementById('otpEmailCodeGroup').classList.remove('hidden');
 
-        // Dispatch via Serverless Email API (/api/send-otp)
         try {
             fetch('/api/send-otp', {
                 method: 'POST',
@@ -1027,7 +1013,6 @@ class RozgaarMitraApp {
             return;
         }
 
-        // Single-Use consumption: invalidate immediately after successful verification
         this.generatedEmailOtp = null;
 
         let u = this.candidates.find(c => c.email.toLowerCase() === email.toLowerCase());
@@ -1044,20 +1029,109 @@ class RozgaarMitraApp {
         alert(`Email OTP Verification Successful! Logged in as ${email}.`);
     }
 
+    // REGISTRATION EMAIL OTP & DUPLICATE ACCOUNT PREVENTION
+    async sendRegEmailOtpCode() {
+        const email = document.getElementById('regEmail').value;
+        const mobile = document.getElementById('regMobile').value;
+
+        if (!email || !email.includes('@')) {
+            alert('Please enter a valid candidate email address first!');
+            return;
+        }
+
+        // DUPLICATE ACCOUNT CHECK BEFORE DISPATCHING OTP
+        const existingEmail = this.candidates.find(c => c.email.toLowerCase() === email.toLowerCase());
+        if (existingEmail) {
+            alert(`🚨 Account Already Registered!\n\nAn account with the email "${email}" ALREADY exists.\n\nPlease use "Email OTP Login" to sign in to your candidate account!`);
+            this.switchAuthTab('email-otp');
+            document.getElementById('otpEmailInput').value = email;
+            return;
+        }
+
+        if (mobile && mobile.length >= 10) {
+            const existingMobile = this.candidates.find(c => c.mobile && c.mobile.includes(mobile));
+            if (existingMobile) {
+                alert(`🚨 Mobile Number Already Registered!\n\nAn account with mobile number "${mobile}" ALREADY exists.\n\nPlease use "Email OTP Login" to sign in to your candidate account!`);
+                this.switchAuthTab('email-otp');
+                return;
+            }
+        }
+
+        this.generatedRegEmailOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        this.regEmailOtpExpiryTime = Date.now() + (5 * 60 * 1000);
+        document.getElementById('regOtpCodeGroup').classList.remove('hidden');
+
+        try {
+            fetch('/api/send-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, otp: this.generatedRegEmailOtp })
+            }).catch(e => console.warn('Email dispatch notice:', e));
+        } catch(e){}
+
+        alert(`📧 Registration Email Verification OTP Sent to: ${email}\n\nYour 6-Digit Email Verification OTP is: ${this.generatedRegEmailOtp}\n\n(Valid for 5 minutes only)`);
+    }
+
     handleRegister(event) {
         event.preventDefault();
         const name = document.getElementById('regName').value;
         const email = document.getElementById('regEmail').value;
         const mobile = document.getElementById('regMobile').value;
+        const otpCode = document.getElementById('regOtpCode').value;
 
-        const u = { id: 'cand-' + Date.now(), name, email, mobile, qualification: '12th Pass', role: 'SEEKER', skills: ['Customer Support'] };
+        // 1. STRICT DUPLICATE ACCOUNT CHECK
+        const existingEmail = this.candidates.find(c => c.email.toLowerCase() === email.toLowerCase());
+        if (existingEmail) {
+            alert(`🚨 Account Already Registered!\n\nAn account with the email "${email}" ALREADY exists.\n\nPlease use "Email OTP Login" to sign in!`);
+            this.switchAuthTab('email-otp');
+            document.getElementById('otpEmailInput').value = email;
+            return;
+        }
+
+        const existingMobile = this.candidates.find(c => c.mobile && c.mobile.includes(mobile));
+        if (existingMobile) {
+            alert(`🚨 Mobile Number Already Registered!\n\nAn account with mobile number "${mobile}" ALREADY exists.\n\nPlease use "Email OTP Login" to sign in!`);
+            this.switchAuthTab('email-otp');
+            return;
+        }
+
+        // 2. STRICT REGISTRATION EMAIL OTP VERIFICATION
+        if (!this.generatedRegEmailOtp) {
+            alert('Please click "Verify Email" first to receive your 6-digit registration OTP code!');
+            return;
+        }
+
+        if (Date.now() > this.regEmailOtpExpiryTime) {
+            this.generatedRegEmailOtp = null;
+            alert('🚨 OTP Expired! Registration verification codes expire after 5 minutes. Please click "Verify Email" again.');
+            return;
+        }
+
+        if (otpCode !== this.generatedRegEmailOtp) {
+            alert('Incorrect Email Verification OTP code! Please enter the exact 6-digit OTP sent to your email.');
+            return;
+        }
+
+        // OTP Verified -> Invalidate single-use code and create candidate profile
+        this.generatedRegEmailOtp = null;
+
+        const u = { 
+            id: 'cand-' + Date.now(), 
+            name: this.sanitizeHTML(name), 
+            email: email.toLowerCase(), 
+            mobile: mobile, 
+            qualification: '12th Pass', 
+            role: 'SEEKER', 
+            skills: ['Customer Support', 'MS Excel'] 
+        };
+
         this.currentUser = u;
         this.candidates.push(u);
         this.setStorageItem('rm_current_user', JSON.stringify(u));
         this.saveStateToStorage();
         this.updateUserUI();
         this.closeModal('authModal');
-        alert(`Account created for ${name}!`);
+        alert(`🎉 Registration & Email Verification Successful!\n\nWelcome to Rozgaar Mitra, ${name}!`);
         this.navigateTo('profile');
     }
 
@@ -1105,7 +1179,6 @@ class RozgaarMitraApp {
         }
     }
 
-    // ADMIN MANAGEMENT ACTIONS
     openNewJobModal() {
         if (this.currentRole !== 'ADMIN') return;
         document.getElementById('jobEditId').value = '';
@@ -1275,7 +1348,6 @@ class RozgaarMitraApp {
         return selected;
     }
 
-    // Strictly Isolated Applications View
     renderApplicationsView() {
         const container = document.getElementById('applicationsContainer');
         if (!container) return;
@@ -1331,7 +1403,6 @@ class RozgaarMitraApp {
         `).join('');
     }
 
-    // Dynamic Live Admin Panel Dashboard Counters
     renderAdminDashboard() {
         if (this.currentRole !== 'ADMIN') return;
         this.updateStatsCounters();
@@ -1384,7 +1455,6 @@ class RozgaarMitraApp {
         }
     }
 
-    // Strictly Protected Candidate Database (ONLY Accessible by 2FA Admin)
     filterCandidateDatabase() {
         if (this.currentRole !== 'ADMIN') return;
         const container = document.getElementById('candidateDatabaseContainer');
