@@ -1,6 +1,6 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - HIGH INBOX-DELIVERY EMAIL OTP SERVICE
- * Sends OTP from official domain (otp@rozgaarmitra.com) to guarantee 100% Inbox delivery (No Spam)
+ * Official Verified Domain Sender: otp@rozgaarmitra.com
  */
 
 export default async function handler(req, res) {
@@ -25,9 +25,8 @@ export default async function handler(req, res) {
     }
 
     try {
-        // High Inbox Delivery Sender Configuration
-        // Uses official domain once verified in Resend, falls back to Resend default for account owner email
-        const senderDomain = process.env.SENDER_EMAIL || 'Rozgaar Mitra OTP <onboarding@resend.dev>';
+        // High Inbox Delivery Official Domain Sender
+        const senderEmail = process.env.SENDER_EMAIL || 'Rozgaar Mitra OTP <otp@rozgaarmitra.com>';
 
         const response = await fetch('https://api.resend.com/emails', {
             method: 'POST',
@@ -36,7 +35,7 @@ export default async function handler(req, res) {
                 'Authorization': `Bearer ${RESEND_API_KEY}`
             },
             body: JSON.stringify({
-                from: senderDomain,
+                from: senderEmail,
                 to: [email],
                 subject: `🔒 ${otp} is your Rozgaar Mitra Verification Code`,
                 headers: {
