@@ -69,14 +69,6 @@ class RozgaarMitraApp {
         this.setupRealtimeSyncListeners();
         this.updateGoogleJobPostingSchema();
 
-        // Cloud API Fetch & Sync
-        await this.syncWithCloudAPI();
-
-        // Poll Cloud API every 4 seconds for live candidate updates across all devices
-        setInterval(() => {
-            this.syncWithCloudAPI(true);
-        }, 4000);
-
         const savedUser = this.getStorageItem('rm_current_user');
         if (savedUser) {
             try {
@@ -89,10 +81,21 @@ class RozgaarMitraApp {
                     this.selectedSkills = [...this.currentUser.skills];
                 }
                 this.loadProfileIntoForm();
+                
+                // Auto-sync current user profile to Cloud API
+                await this.pushCandidateToCloudAPI(this.currentUser);
             } catch (e) {
                 console.warn('Session load notice:', e);
             }
         }
+
+        // Cloud API Fetch & Sync
+        await this.syncWithCloudAPI();
+
+        // Poll Cloud API every 3 seconds for live candidate updates across all devices
+        setInterval(() => {
+            this.syncWithCloudAPI(true);
+        }, 3000);
 
         const savedAdminSession = this.getStorageItem('rm_admin_session');
         if (savedAdminSession === 'active') {
@@ -119,8 +122,8 @@ class RozgaarMitraApp {
     async syncWithCloudAPI(isBackground = false) {
         try {
             // Fetch Candidates from Cloud API
-            let candRes = await fetch('/api/candidates');
-            if (!candRes.ok) candRes = await fetch('/api/candidates.js');
+            let candRes = await fetch('/api/candidates.js');
+            if (!candRes.ok) candRes = await fetch('/api/candidates');
 
             if (candRes.ok) {
                 const candData = await candRes.json();
@@ -142,8 +145,8 @@ class RozgaarMitraApp {
 
         try {
             // Fetch Applications from Cloud API
-            let appRes = await fetch('/api/applications');
-            if (!appRes.ok) appRes = await fetch('/api/applications.js');
+            let appRes = await fetch('/api/applications.js');
+            if (!appRes.ok) appRes = await fetch('/api/applications');
 
             if (appRes.ok) {
                 const appData = await appRes.json();
@@ -171,14 +174,15 @@ class RozgaarMitraApp {
     }
 
     async pushCandidateToCloudAPI(candidateObj) {
+        if (!candidateObj || !candidateObj.email) return;
         try {
-            let res = await fetch('/api/candidates', {
+            let res = await fetch('/api/candidates.js', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(candidateObj)
             });
             if (!res.ok) {
-                await fetch('/api/candidates.js', {
+                await fetch('/api/candidates', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(candidateObj)
@@ -190,14 +194,15 @@ class RozgaarMitraApp {
     }
 
     async pushApplicationToCloudAPI(appObj) {
+        if (!appObj || !appObj.candidateEmail) return;
         try {
-            let res = await fetch('/api/applications', {
+            let res = await fetch('/api/applications.js', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(appObj)
             });
             if (!res.ok) {
-                await fetch('/api/applications.js', {
+                await fetch('/api/applications', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(appObj)
@@ -1107,7 +1112,7 @@ class RozgaarMitraApp {
             this.saveStateToStorage();
 
             try {
-                await fetch('/api/candidates', {
+                await fetch('/api/candidates.js', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: candId, email: cand.email })
@@ -1618,19 +1623,8 @@ class RozgaarMitraApp {
 
         const existingEmail = this.candidates.find(c => c.email.toLowerCase() === email.toLowerCase());
         if (existingEmail) {
-            alert(`🚨 Account Already Registered!\n\nAn account with the email "${email}" ALREADY exists.\n\nPlease use "Email OTP Login" to sign in to your candidate account!`);
-            this.switchAuthTab('email-otp');
-            document.getElementById('otpEmailInput').value = email;
-            return;
-        }
-
-        if (mobile && mobile.length >= 10) {
-            const existingMobile = this.candidates.find(c => c.mobile && c.mobile.includes(mobile));
-            if (existingMobile) {
-                alert(`🚨 Mobile Number Already Registered!\n\nAn account with mobile number "${mobile}" ALREADY exists.\n\nPlease use "Email OTP Login" to sign in to your candidate account!`);
-                this.switchAuthTab('email-otp');
-                return;
-            }
+            alert(`ℹ️ Account Already Exists!\n\nAn account with email "${email}" ALREADY exists.\n\nUpdating registration details and syncing profile to Cloud Database...`);
+            this.pushCandidateToCloudAPI(existingEmail);
         }
 
         this.generatedRegEmailOtp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -1655,21 +1649,6 @@ class RozgaarMitraApp {
         const mobile = document.getElementById('regMobile').value;
         const otpCode = document.getElementById('regOtpCode').value;
 
-        const existingEmail = this.candidates.find(c => c.email.toLowerCase() === email.toLowerCase());
-        if (existingEmail) {
-            alert(`🚨 Account Already Registered!\n\nAn account with the email "${email}" ALREADY exists.\n\nPlease use "Email OTP Login" to sign in!`);
-            this.switchAuthTab('email-otp');
-            document.getElementById('otpEmailInput').value = email;
-            return;
-        }
-
-        const existingMobile = this.candidates.find(c => c.mobile && c.mobile.includes(mobile));
-        if (existingMobile) {
-            alert(`🚨 Mobile Number Already Registered!\n\nAn account with mobile number "${mobile}" ALREADY exists.\n\nPlease use "Email OTP Login" to sign in!`);
-            this.switchAuthTab('email-otp');
-            return;
-        }
-
         if (!this.generatedRegEmailOtp) {
             alert('Please click "Verify Email" first to receive your 6-digit registration OTP code!');
             return;
@@ -1688,26 +1667,32 @@ class RozgaarMitraApp {
 
         this.generatedRegEmailOtp = null;
 
-        const u = { 
-            id: 'cand-' + Date.now(), 
-            name: this.sanitizeHTML(name), 
-            email: email.toLowerCase(), 
-            mobile: mobile, 
-            qualification: '12th Pass', 
-            role: 'SEEKER', 
-            skills: ['Customer Support', 'MS Excel'],
-            isSuspended: false
-        };
+        let u = this.candidates.find(c => c.email.toLowerCase() === email.toLowerCase());
+        if (u) {
+            u.name = this.sanitizeHTML(name);
+            if (mobile) u.mobile = mobile;
+        } else {
+            u = { 
+                id: 'cand-' + Date.now(), 
+                name: this.sanitizeHTML(name), 
+                email: email.toLowerCase(), 
+                mobile: mobile, 
+                qualification: '12th Pass', 
+                role: 'SEEKER', 
+                skills: ['Customer Support', 'MS Excel'],
+                isSuspended: false
+            };
+            this.candidates.push(u);
+        }
 
         this.currentUser = u;
-        this.candidates.push(u);
         this.setStorageItem('rm_current_user', JSON.stringify(u));
         this.saveStateToStorage();
         this.pushCandidateToCloudAPI(u);
         this.notifyRealtimeEvent('CANDIDATE_REGISTERED', u);
         this.updateUserUI();
         this.closeModal('authModal');
-        alert(`🎉 Registration & Email Verification Successful!\n\nWelcome to Rozgaar Mitra, ${name}!`);
+        alert(`🎉 Candidate Account & Email Verification Successful!\n\nProfile synced to Cloud Database! Welcome, ${name}!`);
         this.navigateTo('profile');
     }
 
