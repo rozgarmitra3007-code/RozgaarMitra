@@ -100,8 +100,11 @@
                 
                 <!-- Admin Only Nav Links -->
                 <a href="#" class="nav-link admin-only hidden" data-page="admin-dashboard" onclick="app.navigateTo('admin-dashboard')"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
-                <a href="#" class="nav-link admin-only hidden" data-page="admin-jobs" onclick="app.navigateTo('admin-jobs')"><i class="fa-solid fa-list-check"></i> Manage Jobs</a>
-                <a href="#" class="nav-link admin-only hidden" data-page="admin-candidates" onclick="app.navigateTo('admin-candidates')"><i class="fa-solid fa-users"></i> Candidate Pool</a>
+                <a href="#" class="nav-link admin-only hidden" data-page="admin-jobs" onclick="app.navigateTo('admin-jobs')"><i class="fa-solid fa-list-check"></i> Jobs</a>
+                <a href="#" class="nav-link admin-only hidden" data-page="admin-candidates" onclick="app.navigateTo('admin-candidates')"><i class="fa-solid fa-users"></i> Candidates</a>
+                <a href="#" class="nav-link admin-only hidden" data-page="admin-companies" onclick="app.navigateTo('admin-companies')"><i class="fa-solid fa-building"></i> Employers</a>
+                <a href="#" class="nav-link admin-only hidden" data-page="admin-reports" onclick="app.navigateTo('admin-reports')"><i class="fa-solid fa-file-csv"></i> Reports</a>
+                <a href="#" class="nav-link admin-only hidden" data-page="admin-audit" onclick="app.navigateTo('admin-audit')"><i class="fa-solid fa-shield-halved"></i> Audit Log</a>
             </nav>
 
             <div class="header-actions">
@@ -307,7 +310,7 @@
         </section>
 
 
-        <!-- VIEW 4: REDESIGNED MY CANDIDATE PROFILE PAGE -->
+        <!-- VIEW 4: MY CANDIDATE PROFILE PAGE -->
         <section id="view-profile" class="page-view">
             <div class="page-header bg-surface">
                 <div class="container">
@@ -584,9 +587,12 @@
                 <div class="container flex-between">
                     <div>
                         <h1><i class="fa-solid fa-user-shield text-highlight"></i> Admin Consultant Panel</h1>
-                        <p>Rozgaar Mitra Private Job Consultancy Management</p>
+                        <p>Rozgaar Mitra Private Job Consultancy Control Center</p>
                     </div>
-                    <button class="btn btn-primary btn-sm" onclick="app.openNewJobModal()"><i class="fa-solid fa-plus"></i> Post New Job</button>
+                    <div>
+                        <button class="btn btn-primary btn-sm mr-2" onclick="app.openNewJobModal()"><i class="fa-solid fa-plus"></i> Post Job</button>
+                        <button class="btn btn-outline btn-sm text-white" onclick="app.openBroadcastModal()"><i class="fa-solid fa-bullhorn"></i> Broadcast Alert</button>
+                    </div>
                 </div>
             </div>
 
@@ -601,18 +607,21 @@
                         <span class="text-muted">Candidates</span>
                     </div>
                     <div class="card p-4 text-center">
+                        <h2 id="admTotalCompanies">0</h2>
+                        <span class="text-muted">Employers</span>
+                    </div>
+                    <div class="card p-4 text-center">
                         <h2 id="admTotalApplications">0</h2>
                         <span class="text-muted">Applications</span>
                     </div>
-                    <div class="card p-4 text-center">
-                        <h2 id="admShortlistedCount">0</h2>
-                        <span class="text-muted">Shortlisted</span>
-                    </div>
                 </div>
 
-                <div class="card p-4">
-                    <h3>Recent Candidate Applications Received</h3>
-                    <div class="table-responsive mt-3">
+                <div class="card p-4 mb-4">
+                    <div class="flex-between mb-3 border-bottom pb-2">
+                        <h3>Recent Candidate Applications Received</h3>
+                        <button class="btn btn-outline btn-sm" onclick="app.exportApplicationsCSV()"><i class="fa-solid fa-file-csv text-success"></i> Export CSV</button>
+                    </div>
+                    <div class="table-responsive">
                         <table class="table">
                             <thead>
                                 <tr>
@@ -639,7 +648,10 @@
                         <h1>Manage & Edit Jobs</h1>
                         <p>Post, edit, delete, or mark jobs as "Vacancy Full / Hiring Closed"</p>
                     </div>
-                    <button class="btn btn-primary" onclick="app.openNewJobModal()"><i class="fa-solid fa-plus"></i> Post New Job</button>
+                    <div>
+                        <button class="btn btn-outline btn-sm text-white mr-2" onclick="app.exportJobsCSV()"><i class="fa-solid fa-file-csv"></i> Export Jobs CSV</button>
+                        <button class="btn btn-primary btn-sm" onclick="app.openNewJobModal()"><i class="fa-solid fa-plus"></i> Post New Job</button>
+                    </div>
                 </div>
             </div>
             <div class="container section-padding">
@@ -667,13 +679,110 @@
         <!-- VIEW 10: ADMIN CANDIDATES -->
         <section id="view-admin-candidates" class="page-view">
             <div class="page-header bg-dark text-white">
-                <div class="container">
-                    <h1>Candidate Database Search</h1>
-                    <p>Search talent pool by qualification, skills, and city</p>
+                <div class="container flex-between">
+                    <div>
+                        <h1>Candidate Database Search</h1>
+                        <p>Search talent pool by qualification, skills, and city</p>
+                    </div>
+                    <button class="btn btn-outline btn-sm text-white" onclick="app.exportCandidatesCSV()"><i class="fa-solid fa-file-csv"></i> Export Candidates CSV</button>
                 </div>
             </div>
             <div class="container section-padding">
                 <div id="candidateDatabaseContainer" class="jobs-grid"></div>
+            </div>
+        </section>
+
+
+        <!-- VIEW 11: ADMIN MANAGE COMPANIES / EMPLOYERS -->
+        <section id="view-admin-companies" class="page-view">
+            <div class="page-header bg-dark text-white">
+                <div class="container flex-between">
+                    <div>
+                        <h1>Employer & Company Verification</h1>
+                        <p>Approve, reject, or block employer company profiles</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="app.openNewCompanyModal()"><i class="fa-solid fa-plus"></i> Add Employer</button>
+                </div>
+            </div>
+            <div class="container section-padding">
+                <div class="card p-0">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Company Name</th>
+                                    <th>Industry</th>
+                                    <th>Location</th>
+                                    <th>Contact Email</th>
+                                    <th>Verification Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminCompaniesTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- VIEW 12: ADMIN CSV REPORTS & ANALYTICS -->
+        <section id="view-admin-reports" class="page-view">
+            <div class="page-header bg-dark text-white">
+                <div class="container">
+                    <h1>Reports & CSV Exports</h1>
+                    <p>Export database records into CSV spreadsheets for reporting</p>
+                </div>
+            </div>
+            <div class="container section-padding">
+                <div class="form-grid mb-4">
+                    <div class="card p-4 text-center">
+                        <i class="fa-solid fa-users fa-2x text-primary mb-2"></i>
+                        <h3>Candidates Database</h3>
+                        <p class="text-sm text-muted mb-3">Download full list of candidates with contact details, skills, and experience</p>
+                        <button class="btn btn-primary btn-block" onclick="app.exportCandidatesCSV()"><i class="fa-solid fa-file-csv"></i> Export Candidates CSV</button>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <i class="fa-solid fa-paper-plane fa-2x text-success mb-2"></i>
+                        <h3>Job Applications Log</h3>
+                        <p class="text-sm text-muted mb-3">Download candidate applications history with status and timestamps</p>
+                        <button class="btn btn-success btn-block" onclick="app.exportApplicationsCSV()"><i class="fa-solid fa-file-csv"></i> Export Applications CSV</button>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <i class="fa-solid fa-briefcase fa-2x text-warning mb-2"></i>
+                        <h3>Job Vacancies Database</h3>
+                        <p class="text-sm text-muted mb-3">Download active & closed job listings with salary and category specs</p>
+                        <button class="btn btn-warning btn-block" onclick="app.exportJobsCSV()"><i class="fa-solid fa-file-csv"></i> Export Jobs CSV</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- VIEW 13: ADMIN ACTIVITY AUDIT LOG -->
+        <section id="view-admin-audit" class="page-view">
+            <div class="page-header bg-dark text-white">
+                <div class="container">
+                    <h1>Admin Activity Audit Log</h1>
+                    <p>Track all admin security actions, job changes, and candidate updates</p>
+                </div>
+            </div>
+            <div class="container section-padding">
+                <div class="card p-0">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Admin Email</th>
+                                    <th>Action Type</th>
+                                    <th>Log Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminAuditLogTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -928,6 +1037,26 @@
                     <input type="text" id="admin2faOtpInput" class="form-control" placeholder="Enter 6-digit 2FA OTP" maxlength="6">
                 </div>
                 <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-lock"></i> Verify 2FA & Unlock Admin Panel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Broadcast Alert Modal -->
+    <div class="modal-backdrop hidden" id="broadcastModal">
+        <div class="modal-card" style="max-width:500px;">
+            <button class="modal-close" onclick="app.closeModal('broadcastModal')"><i class="fa-solid fa-xmark"></i></button>
+            <h2><i class="fa-solid fa-bullhorn text-primary"></i> Broadcast Announcement</h2>
+            <p class="text-sm text-secondary mb-3">Send announcement alert to all candidates' inboxes at once</p>
+            <form onsubmit="app.sendBroadcastNotification(event)">
+                <div class="mb-3">
+                    <label class="text-sm font-weight-bold">Notification Title *</label>
+                    <input type="text" id="broadcastTitle" class="form-control" required placeholder="🔥 50+ New Private Job Vacancies Open!">
+                </div>
+                <div class="mb-3">
+                    <label class="text-sm font-weight-bold">Notification Message *</label>
+                    <textarea id="broadcastMessage" class="form-control" rows="4" required placeholder="Write announcement message..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-paper-plane"></i> Send Broadcast to All Candidates</button>
             </form>
         </div>
     </div>

@@ -1,8 +1,13 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - 100% PRODUCTION CORE ENGINE
  * 
- * OFFICIAL ADMIN CONFIGURED: rozgarmitra3007@gmail.com
- * Official Admin Password: Admin@75100
+ * COMPLETE ADMIN PORTAL CONTROL CENTER:
+ * 1. Dashboard Key Metrics & Audit Log System
+ * 2. Manage Jobs with CSV Reports Export
+ * 3. Manage Employers / Companies (Approve / Reject / Block)
+ * 4. Manage Candidates with Account Suspend / Block Option
+ * 5. Manage Applications with Status Management
+ * 6. Broadcast Notifications & Support Inbox System
  */
 
 class RozgaarMitraApp {
@@ -257,26 +262,44 @@ class RozgaarMitraApp {
         try {
             this.jobs = JSON.parse(this.getStorageItem('rm_jobs_v14') || '[]');
             this.candidates = JSON.parse(this.getStorageItem('rm_candidates_v14') || '[]');
+            this.companies = JSON.parse(this.getStorageItem('rm_companies_v14') || '[]');
             this.applications = JSON.parse(this.getStorageItem('rm_applications') || '[]');
             this.savedJobIds = JSON.parse(this.getStorageItem('rm_saved_job_ids') || '[]');
             this.notifications = JSON.parse(this.getStorageItem('rm_notifications') || '[]');
+            this.auditLogs = JSON.parse(this.getStorageItem('rm_audit_logs') || '[]');
         } catch (e) {
             this.jobs = [];
             this.candidates = [];
+            this.companies = [];
             this.applications = [];
             this.savedJobIds = [];
             this.notifications = [];
+            this.auditLogs = [];
         }
     }
 
     saveStateToStorage() {
         this.setStorageItem('rm_jobs_v14', JSON.stringify(this.jobs));
         this.setStorageItem('rm_candidates_v14', JSON.stringify(this.candidates));
+        this.setStorageItem('rm_companies_v14', JSON.stringify(this.companies));
         this.setStorageItem('rm_applications', JSON.stringify(this.applications));
         this.setStorageItem('rm_saved_job_ids', JSON.stringify(this.savedJobIds));
         this.setStorageItem('rm_notifications', JSON.stringify(this.notifications));
+        this.setStorageItem('rm_audit_logs', JSON.stringify(this.auditLogs));
         this.updateStatsCounters();
         this.updateGoogleJobPostingSchema();
+    }
+
+    logAdminAction(actionType, details) {
+        const newLog = {
+            id: 'log-' + Date.now(),
+            timestamp: new Date().toLocaleString(),
+            adminEmail: this.officialAdminEmail,
+            actionType: actionType,
+            details: details
+        };
+        this.auditLogs.unshift(newLog);
+        this.saveStateToStorage();
     }
 
     setupTheme() {
@@ -296,7 +319,7 @@ class RozgaarMitraApp {
 
     navigateTo(pageId) {
         const protectedPages = ['profile', 'applications', 'saved', 'notifications'];
-        const adminPages = ['admin-dashboard', 'admin-jobs', 'admin-candidates'];
+        const adminPages = ['admin-dashboard', 'admin-jobs', 'admin-candidates', 'admin-companies', 'admin-reports', 'admin-audit'];
 
         if (adminPages.includes(pageId) && this.currentRole !== 'ADMIN') {
             alert('🚨 Access Denied!\n\nCandidate profiles and application database are strictly protected. Admin authentication required.');
@@ -333,6 +356,8 @@ class RozgaarMitraApp {
         if (pageId === 'admin-dashboard') this.renderAdminDashboard();
         if (pageId === 'admin-jobs') this.renderAdminJobsTable();
         if (pageId === 'admin-candidates') this.filterCandidateDatabase();
+        if (pageId === 'admin-companies') this.renderManageCompaniesTable();
+        if (pageId === 'admin-audit') this.renderAdminAuditLogs();
         if (pageId === 'profile') this.updateProfileCompletion();
     }
 
@@ -370,6 +395,7 @@ class RozgaarMitraApp {
             if (this.failedAdminAttempts >= 5) {
                 this.adminLockoutTime = Date.now() + (15 * 60 * 1000);
                 this.closeModal('adminAuthModal');
+                this.logAdminAction('LOGIN_LOCKOUT', `5 Failed login attempts for ${email}. Portal locked for 15 mins.`);
                 alert('🚨 SECURITY LOCKOUT!\n\n5 Failed Admin Login Attempts Detected. Portal locked for 15 minutes to prevent unauthorized access.');
             } else {
                 const rem = 5 - this.failedAdminAttempts;
@@ -424,6 +450,7 @@ class RozgaarMitraApp {
             this.closeModal('adminAuthModal');
             try { history.pushState('', document.title, window.location.pathname); } catch(e){}
             this.updateUserUI();
+            this.logAdminAction('ADMIN_LOGIN_SUCCESS', `Admin logged in successfully (${this.officialAdminEmail}).`);
             alert(`🔒 Admin 2FA Authentication Successful!\n\nLogged in as Official Admin (${this.officialAdminEmail}). All management options unlocked.`);
             this.navigateTo('admin-dashboard');
         } else {
@@ -432,6 +459,7 @@ class RozgaarMitraApp {
     }
 
     exitAdminMode() {
+        this.logAdminAction('ADMIN_LOGOUT', `Admin logged out.`);
         this.clearAdminSession();
         alert('Returned to Candidate View.');
         this.navigateTo('home');
@@ -445,6 +473,7 @@ class RozgaarMitraApp {
     updateStatsCounters() {
         if (document.getElementById('admTotalJobs')) document.getElementById('admTotalJobs').textContent = this.jobs.length;
         if (document.getElementById('admTotalSeekers')) document.getElementById('admTotalSeekers').textContent = this.candidates.length;
+        if (document.getElementById('admTotalCompanies')) document.getElementById('admTotalCompanies').textContent = this.companies.length;
         if (document.getElementById('admTotalApplications')) document.getElementById('admTotalApplications').textContent = this.applications.length;
         if (document.getElementById('admShortlistedCount')) document.getElementById('admShortlistedCount').textContent = this.applications.filter(a => a.status === 'Shortlisted' || a.status === 'Selected').length;
     }
@@ -748,6 +777,226 @@ class RozgaarMitraApp {
         this.saveStateToStorage();
         alert(`Application for "${job.title}" successfully submitted!`);
         this.navigateTo('applications');
+    }
+
+    // CSV REPORT EXPORT ENGINE
+    exportCandidatesCSV() {
+        if (this.currentRole !== 'ADMIN') return;
+        if (!this.candidates || this.candidates.length === 0) {
+            alert('No candidate records available to export.');
+            return;
+        }
+
+        let csv = 'Name,Email,Mobile,Qualification,Location,Experience,Skills,Status\n';
+        this.candidates.forEach(c => {
+            csv += `"${c.name}","${c.email}","${c.mobile}","${c.qualification || ''}","${c.location || ''}","${c.experienceYears || ''}","${(c.skills || []).join(';') || ''}","${c.isSuspended ? 'Suspended' : 'Active'}"\n`;
+        });
+
+        this.downloadCSVFile(csv, `rozgaarmitra_candidates_${Date.now()}.csv`);
+        this.logAdminAction('EXPORT_CSV', 'Exported Candidate Database to CSV');
+    }
+
+    exportApplicationsCSV() {
+        if (this.currentRole !== 'ADMIN') return;
+        if (!this.applications || this.applications.length === 0) {
+            alert('No application records available to export.');
+            return;
+        }
+
+        let csv = 'ApplicationID,CandidateName,CandidateEmail,CandidateMobile,JobTitle,AppliedDate,Status\n';
+        this.applications.forEach(a => {
+            const job = this.jobs.find(j => j.id === a.jobId) || { title: 'Job' };
+            csv += `"${a.id}","${a.candidateName}","${a.candidateEmail}","${a.candidateMobile}","${job.title}","${a.appliedAt}","${a.status}"\n`;
+        });
+
+        this.downloadCSVFile(csv, `rozgaarmitra_applications_${Date.now()}.csv`);
+        this.logAdminAction('EXPORT_CSV', 'Exported Applications Database to CSV');
+    }
+
+    exportJobsCSV() {
+        if (this.currentRole !== 'ADMIN') return;
+        if (!this.jobs || this.jobs.length === 0) {
+            alert('No job records available to export.');
+            return;
+        }
+
+        let csv = 'JobID,Title,Company,Category,Location,Salary,Qualification,Status,PostedDate\n';
+        this.jobs.forEach(j => {
+            csv += `"${j.id}","${j.title}","${j.companyName}","${j.category}","${j.location}","${j.salary}","${j.qualificationRequired}","${j.status}","${j.postedAt}"\n`;
+        });
+
+        this.downloadCSVFile(csv, `rozgaarmitra_jobs_${Date.now()}.csv`);
+        this.logAdminAction('EXPORT_CSV', 'Exported Jobs Database to CSV');
+    }
+
+    downloadCSVFile(content, filename) {
+        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    openBroadcastModal() {
+        if (this.currentRole !== 'ADMIN') return;
+        document.getElementById('broadcastTitle').value = '';
+        document.getElementById('broadcastMessage').value = '';
+        document.getElementById('broadcastModal').classList.remove('hidden');
+    }
+
+    sendBroadcastNotification(event) {
+        event.preventDefault();
+        if (this.currentRole !== 'ADMIN') return;
+
+        const title = document.getElementById('broadcastTitle').value;
+        const msg = document.getElementById('broadcastMessage').value;
+
+        const newNotif = {
+            id: 'notif-broad-' + Date.now(),
+            userId: 'all',
+            message: `📢 ${title}: ${msg}`,
+            type: 'ANNOUNCEMENT',
+            isRead: false,
+            createdAt: new Date().toISOString().split('T')[0]
+        };
+
+        this.notifications.unshift(newNotif);
+        this.saveStateToStorage();
+        this.closeModal('broadcastModal');
+        this.logAdminAction('BROADCAST_ALERT', `Sent broadcast notification to all candidates: ${title}`);
+        alert('📢 Broadcast Alert sent to all candidate inboxes successfully!');
+    }
+
+    renderAdminAuditLogs() {
+        if (this.currentRole !== 'ADMIN') return;
+        const tbody = document.getElementById('adminAuditLogTableBody');
+        if (!tbody) return;
+
+        if (!this.auditLogs || this.auditLogs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-muted">No admin audit logs recorded yet.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = this.auditLogs.map(l => `
+            <tr>
+                <td><small>${l.timestamp}</small></td>
+                <td><strong>${this.sanitizeHTML(l.adminEmail)}</strong></td>
+                <td><span class="badge badge-primary">${this.sanitizeHTML(l.actionType)}</span></td>
+                <td>${this.sanitizeHTML(l.details)}</td>
+            </tr>
+        `).join('');
+    }
+
+    renderManageCompaniesTable() {
+        if (this.currentRole !== 'ADMIN') return;
+        const tbody = document.getElementById('adminCompaniesTableBody');
+        if (!tbody) return;
+
+        if (!this.companies || this.companies.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-muted">No employer companies registered yet. Click "Add Employer" to add a company.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = this.companies.map(c => `
+            <tr>
+                <td><strong>${this.sanitizeHTML(c.name)}</strong></td>
+                <td>${this.sanitizeHTML(c.industry || 'Private Sector')}</td>
+                <td>${this.sanitizeHTML(c.location || 'India')}</td>
+                <td>${this.sanitizeHTML(c.email)}</td>
+                <td><span class="badge ${c.isApproved ? 'badge-success' : 'badge-danger'}">${c.isApproved ? 'Approved Employer' : 'Pending Verification'}</span></td>
+                <td>
+                    <button class="btn btn-${c.isApproved ? 'warning' : 'success'} btn-sm" onclick="app.toggleCompanyApproval('${c.id}')">
+                        ${c.isApproved ? 'Suspend' : 'Approve'}
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    toggleCompanyApproval(compIdx) {
+        if (this.currentRole !== 'ADMIN') return;
+        const comp = this.companies.find(c => c.id === compIdx);
+        if (comp) {
+            comp.isApproved = !comp.isApproved;
+            this.saveStateToStorage();
+            this.renderManageCompaniesTable();
+            this.logAdminAction('COMPANY_STATUS_TOGGLE', `Updated approval status for ${comp.name} to ${comp.isApproved}`);
+            alert(`Employer "${comp.name}" verification status updated!`);
+        }
+    }
+
+    openNewCompanyModal() {
+        if (this.currentRole !== 'ADMIN') return;
+        const name = prompt('Enter Employer Company Name:');
+        if (!name) return;
+        const email = prompt('Enter Company Contact Email:');
+        if (!email) return;
+
+        const newComp = {
+            id: 'comp-' + Date.now(),
+            name: name,
+            email: email,
+            industry: 'Private Sector',
+            location: 'Delhi NCR',
+            isApproved: true
+        };
+
+        this.companies.push(newComp);
+        this.saveStateToStorage();
+        this.renderManageCompaniesTable();
+        this.logAdminAction('ADD_COMPANY', `Added new verified employer: ${name}`);
+        alert(`Employer Company "${name}" added and verified!`);
+    }
+
+    toggleCandidateStatus(candId) {
+        if (this.currentRole !== 'ADMIN') return;
+        const cand = this.candidates.find(c => c.id === candId);
+        if (cand) {
+            cand.isSuspended = !cand.isSuspended;
+            this.saveStateToStorage();
+            this.filterCandidateDatabase();
+            this.logAdminAction('CANDIDATE_STATUS_TOGGLE', `Updated candidate ${cand.email} status to ${cand.isSuspended ? 'Suspended' : 'Active'}`);
+            alert(`Candidate account status updated to ${cand.isSuspended ? 'Suspended' : 'Active'}.`);
+        }
+    }
+
+    filterCandidateDatabase() {
+        if (this.currentRole !== 'ADMIN') return;
+        const container = document.getElementById('candidateDatabaseContainer');
+        if (!container) return;
+
+        if (this.candidates.length === 0) {
+            container.innerHTML = `<div class="card p-5 text-center text-muted full-width">No registered candidates in database yet.</div>`;
+            return;
+        }
+
+        container.innerHTML = this.candidates.map(c => `
+            <div class="card p-3">
+                <div style="display:flex; align-items:center; justify-content:space-between;" class="mb-2">
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        ${c.photoUrl ? 
+                            `<img src="${c.photoUrl}" style="width:44px; height:44px; border-radius:50%; object-fit:cover;">` : 
+                            `<div style="width:44px; height:44px; border-radius:50%; background:#002b66; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold;">${this.sanitizeHTML(c.name).substring(0, 2).toUpperCase()}</div>`
+                        }
+                        <div>
+                            <h3>${this.sanitizeHTML(c.name)}</h3>
+                            <p class="text-secondary text-sm">${this.sanitizeHTML(c.email)} • ${this.sanitizeHTML(c.mobile)}</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline btn-sm ${c.isSuspended ? 'text-success' : 'text-danger'}" onclick="app.toggleCandidateStatus('${c.id}')">
+                        ${c.isSuspended ? 'Unblock' : 'Suspend'}
+                    </button>
+                </div>
+                <p class="text-sm">Qualification: <strong>${this.sanitizeHTML(c.qualification)}</strong> | Pref: <strong>${this.sanitizeHTML(c.preferredCategory || 'Any')}</strong> (${this.sanitizeHTML(c.preferredCity || 'Any')})</p>
+                ${c.resumeFileName ? `<p class="text-sm text-success mt-1"><i class="fa-solid fa-file-pdf"></i> Resume: ${this.sanitizeHTML(c.resumeFileName)}</p>` : ''}
+                <div class="job-skills-tags mt-2">
+                    ${(c.skills || []).map(s => `<span class="skill-tag">${this.sanitizeHTML(s)}</span>`).join('')}
+                </div>
+            </div>
+        `).join('');
     }
 
     updateProfileCompletion() {
@@ -1085,6 +1334,11 @@ class RozgaarMitraApp {
             this.candidates.push(u);
         }
 
+        if (u.isSuspended) {
+            alert('🚨 Account Suspended!\n\nYour candidate profile is currently suspended by the Admin. Please contact support@rozgaarmitra.com.');
+            return;
+        }
+
         this.currentUser = u;
         this.setStorageItem('rm_current_user', JSON.stringify(u));
         this.saveStateToStorage();
@@ -1182,7 +1436,8 @@ class RozgaarMitraApp {
             mobile: mobile, 
             qualification: '12th Pass', 
             role: 'SEEKER', 
-            skills: ['Customer Support', 'MS Excel'] 
+            skills: ['Customer Support', 'MS Excel'],
+            isSuspended: false
         };
 
         this.currentUser = u;
@@ -1290,6 +1545,7 @@ class RozgaarMitraApp {
         this.closeModal('deleteConfirmModal');
         this.pendingDeleteJobId = null;
 
+        this.logAdminAction('DELETE_JOB', `Permanently deleted job vacancy "${job ? job.title : jobId}"`);
         alert(`Job "${job ? job.title : ''}" deleted permanently!`);
         this.renderAdminJobsTable();
         this.renderFeaturedJobs();
@@ -1311,6 +1567,7 @@ class RozgaarMitraApp {
         this.saveStateToStorage();
         this.renderAdminJobsTable();
         this.renderFeaturedJobs();
+        this.logAdminAction('TOGGLE_HIRING_STATUS', `Toggled hiring status for "${job.title}" to ${job.status}`);
     }
 
     saveJob(event) {
@@ -1333,6 +1590,7 @@ class RozgaarMitraApp {
                     ...this.jobs[idx],
                     title, companyName, category, location, salary, qualificationRequired, description
                 };
+                this.logAdminAction('UPDATE_JOB', `Updated job details for "${title}"`);
                 alert('Job updated successfully!');
             }
         } else {
@@ -1343,6 +1601,7 @@ class RozgaarMitraApp {
                 description, status: 'PUBLISHED', postedAt: new Date().toISOString().split('T')[0]
             };
             this.jobs.unshift(newJob);
+            this.logAdminAction('POST_JOB', `Posted new live job vacancy "${title}" for ${companyName}`);
             alert('New job posted successfully!');
         }
 
@@ -1490,39 +1749,9 @@ class RozgaarMitraApp {
             });
 
             this.saveStateToStorage();
+            this.logAdminAction('UPDATE_APPLICATION_STATUS', `Updated application ${appId} status to ${newStatus}`);
             alert(`Candidate status updated to "${newStatus}"!`);
         }
-    }
-
-    filterCandidateDatabase() {
-        if (this.currentRole !== 'ADMIN') return;
-        const container = document.getElementById('candidateDatabaseContainer');
-        if (!container) return;
-
-        if (this.candidates.length === 0) {
-            container.innerHTML = `<div class="card p-5 text-center text-muted full-width">No registered candidates in database yet.</div>`;
-            return;
-        }
-
-        container.innerHTML = this.candidates.map(c => `
-            <div class="card p-3">
-                <div style="display:flex; align-items:center; gap:0.75rem;" class="mb-2">
-                    ${c.photoUrl ? 
-                        `<img src="${c.photoUrl}" style="width:44px; height:44px; border-radius:50%; object-fit:cover;">` : 
-                        `<div style="width:44px; height:44px; border-radius:50%; background:#002b66; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold;">${this.sanitizeHTML(c.name).substring(0, 2).toUpperCase()}</div>`
-                    }
-                    <div>
-                        <h3>${this.sanitizeHTML(c.name)}</h3>
-                        <p class="text-secondary text-sm">${this.sanitizeHTML(c.email)} • ${this.sanitizeHTML(c.mobile)}</p>
-                    </div>
-                </div>
-                <p class="text-sm">Qualification: <strong>${this.sanitizeHTML(c.qualification)}</strong> | Pref: <strong>${this.sanitizeHTML(c.preferredCategory || 'Any')}</strong> (${this.sanitizeHTML(c.preferredCity || 'Any')})</p>
-                ${c.resumeFileName ? `<p class="text-sm text-success mt-1"><i class="fa-solid fa-file-pdf"></i> Resume: ${this.sanitizeHTML(c.resumeFileName)}</p>` : ''}
-                <div class="job-skills-tags mt-2">
-                    ${(c.skills || []).map(s => `<span class="skill-tag">${this.sanitizeHTML(s)}</span>`).join('')}
-                </div>
-            </div>
-        `).join('');
     }
 
     openAuthModal(tab = 'email-otp') {
