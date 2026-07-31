@@ -1,4 +1,13 @@
 {
   "name": "rozgaarmitra",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "scripts": {
+    "build": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.10.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.10.0"
+  }
 }
