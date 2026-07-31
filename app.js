@@ -1,7 +1,7 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - 100% PRODUCTION CORE ENGINE
  * 
- * CLEAN USER UI & ADMIN NAVIGATION ENGINE
+ * EXECUTIVE DEDICATED ADMIN CONTROL CENTER ENGINE
  */
 
 class RozgaarMitraApp {
@@ -84,6 +84,7 @@ class RozgaarMitraApp {
             if (Date.now() - lastAct < 30 * 60 * 1000) {
                 this.currentRole = 'ADMIN';
                 this.adminLastActivity = Date.now();
+                this.navigateTo('admin-dashboard');
             } else {
                 this.clearAdminSession();
             }
@@ -457,10 +458,10 @@ class RozgaarMitraApp {
             try { history.pushState('', document.title, window.location.pathname); } catch(e){}
             this.updateUserUI();
             this.logAdminAction('ADMIN_LOGIN_SUCCESS', `Admin logged in successfully (${this.officialAdminEmail}).`);
-            alert(`🔒 Admin 2FA Authentication Successful!\n\nLogged in as Official Admin (${this.officialAdminEmail}). All management options unlocked.`);
+            alert(`🔒 Admin 2FA Authentication Successful!\n\nLogged in as Official Admin (${this.officialAdminEmail}). Unlocking Executive Admin Portal.`);
             this.navigateTo('admin-dashboard');
         } else {
-            alert('Incorrect 2FA Security OTP Code! Please enter the exact 6-digit OTP code sent to your email.');
+            alert('Incorrect 2FA Security OTP Code! Please enter the exact 6-digit OTP sent to your email.');
         }
     }
 
@@ -1470,10 +1471,16 @@ class RozgaarMitraApp {
         const authBox = document.getElementById('authBox');
 
         if (this.currentRole === 'ADMIN') {
-            document.querySelectorAll('.seeker-only').forEach(e => e.classList.remove('hidden'));
+            // HIDE SEEKER LINKS WHEN ADMIN ROLE IS ACTIVE FOR 100% ADMIN DASHBOARD EXPERIENCE
+            document.querySelectorAll('.seeker-only').forEach(e => e.classList.add('hidden'));
             document.querySelectorAll('.admin-only').forEach(e => e.classList.remove('hidden'));
             if (exitAdminBtn) exitAdminBtn.classList.remove('hidden');
             if (authBox) authBox.classList.add('hidden');
+            
+            // IF CURRENT VIEW IS CANDIDATE HOME, AUTOMATICALLY SWITCH TO ADMIN DASHBOARD
+            if (this.currentView === 'home' || this.currentView === 'profile') {
+                this.navigateTo('admin-dashboard');
+            }
             return;
         }
 
@@ -1497,7 +1504,7 @@ class RozgaarMitraApp {
         } else {
             document.querySelectorAll('.seeker-only').forEach(e => e.classList.add('hidden'));
             document.querySelectorAll('.admin-only').forEach(e => e.classList.add('hidden'));
-            if (authBox) authBox.classList.remove('hidden');
+            if (authBox) authBox.remove('hidden');
             document.getElementById('userProfileMenu')?.classList.add('hidden');
         }
     }
