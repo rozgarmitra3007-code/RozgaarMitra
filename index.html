@@ -592,7 +592,7 @@
                             <i class="fa-solid fa-list-check"></i> <span>Manage Jobs</span>
                         </a>
                         <a href="#" class="admin-sidebar-link" data-admin-page="admin-candidates" onclick="app.navigateTo('admin-candidates')">
-                            <i class="fa-solid fa-users"></i> <span>Candidates</span>
+                            <i class="fa-solid fa-users"></i> <span>Candidates Database</span>
                         </a>
                         <a href="#" class="admin-sidebar-link" data-admin-page="admin-companies" onclick="app.navigateTo('admin-companies')">
                             <i class="fa-solid fa-building"></i> <span>Employers</span>
@@ -607,7 +607,7 @@
 
                     <div style="margin-top: auto; padding-top: 2rem; border-top: 1px solid #1e293b;">
                         <button class="btn btn-outline btn-block text-white btn-sm" onclick="app.exitAdminMode()">
-                            <i class="fa-solid fa-right-from-bracket"></i> Exit Admin
+                            <i class="fa-solid fa-right-from-bracket"></i> Exit Admin Mode
                         </button>
                     </div>
                 </aside>
@@ -700,16 +700,40 @@
                         </div>
                     </section>
 
-                    <!-- VIEW 10: ADMIN CANDIDATES -->
+                    <!-- VIEW 10: ADMIN CANDIDATES DATABASE WITH SEARCH & DETAILED CARDS -->
                     <section id="view-admin-candidates" class="page-view p-4">
-                        <div class="flex-between mb-4">
+                        <div class="flex-between mb-3">
                             <div>
-                                <h1>Candidate Database Search</h1>
-                                <p class="text-secondary text-sm">Search talent pool by qualification, skills, and city</p>
+                                <h1>Candidate Profile Database</h1>
+                                <p class="text-secondary text-sm">Full details of all candidates who registered or submitted profiles</p>
                             </div>
-                            <button class="btn btn-outline btn-sm" onclick="app.exportCandidatesCSV()"><i class="fa-solid fa-file-csv"></i> Export Candidates CSV</button>
+                            <button class="btn btn-outline btn-sm" onclick="app.exportCandidatesCSV()"><i class="fa-solid fa-file-csv text-success"></i> Export All Candidates CSV</button>
                         </div>
-                        <div id="candidateDatabaseContainer" class="jobs-grid"></div>
+
+                        <!-- CANDIDATE SEARCH & FILTER BAR -->
+                        <div class="card p-3 mb-4" style="background:#f8fafc; border-radius:10px;">
+                            <div style="display:grid; grid-template-columns: 1.5fr 1fr 1fr; gap:0.75rem;">
+                                <input type="text" id="adminCandidateSearchKey" class="form-control" placeholder="Search candidate by name, email, mobile, or skill..." onkeyup="app.filterCandidateDatabase()">
+                                <select id="adminCandidateQualFilter" class="form-control" onchange="app.filterCandidateDatabase()">
+                                    <option value="">All Qualifications</option>
+                                    <option value="10th Pass">10th Pass</option>
+                                    <option value="12th Pass">12th Pass</option>
+                                    <option value="Diploma / ITI">Diploma / ITI</option>
+                                    <option value="Graduate">Graduate</option>
+                                </select>
+                                <select id="adminCandidateCityFilter" class="form-control" onchange="app.filterCandidateDatabase()">
+                                    <option value="">All Preferred Cities</option>
+                                    <option value="Delhi NCR">Delhi NCR</option>
+                                    <option value="Lucknow">Lucknow</option>
+                                    <option value="Kanpur">Kanpur</option>
+                                    <option value="Patna">Patna</option>
+                                    <option value="Jaipur">Jaipur</option>
+                                    <option value="Work From Home">Work From Home</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="candidateDatabaseContainer" style="display:flex; flex-direction:column; gap:1.25rem;"></div>
                     </section>
 
                     <!-- VIEW 11: ADMIN MANAGE COMPANIES / EMPLOYERS -->

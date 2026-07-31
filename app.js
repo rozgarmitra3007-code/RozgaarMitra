@@ -1,7 +1,7 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - 100% PRODUCTION CORE ENGINE
  * 
- * EXECUTIVE DEDICATED ADMIN CONTROL CENTER ENGINE
+ * COMPLETE DETAILED CANDIDATE DATABASE MANAGER FOR ADMIN PORTAL
  */
 
 class RozgaarMitraApp {
@@ -794,9 +794,9 @@ class RozgaarMitraApp {
             return;
         }
 
-        let csv = 'Name,Email,Mobile,Qualification,Location,Experience,Skills,Status\n';
+        let csv = 'Name,Email,Mobile,DOB,Gender,Qualification,Location,Experience,PrefCategory,PrefCity,ExpectedSalMin,ExpectedSalMax,Skills,Resume,Status\n';
         this.candidates.forEach(c => {
-            csv += `"${c.name}","${c.email}","${c.mobile}","${c.qualification || ''}","${c.location || ''}","${c.experienceYears || ''}","${(c.skills || []).join(';') || ''}","${c.isSuspended ? 'Suspended' : 'Active'}"\n`;
+            csv += `"${c.name}","${c.email}","${c.mobile}","${c.dob || ''}","${c.gender || ''}","${c.qualification || ''}","${c.location || ''}","${c.experienceYears || ''}","${c.preferredCategory || ''}","${c.preferredCity || ''}","${c.expectedSalaryMin || ''}","${c.expectedSalaryMax || ''}","${(c.skills || []).join(';') || ''}","${c.resumeFileName || ''}","${c.isSuspended ? 'Suspended' : 'Active'}"\n`;
         });
 
         this.downloadCSVFile(csv, `rozgaarmitra_candidates_${Date.now()}.csv`);
@@ -958,6 +958,20 @@ class RozgaarMitraApp {
         alert(`Employer Company "${name}" added and verified!`);
     }
 
+    deleteCandidate(candId) {
+        if (this.currentRole !== 'ADMIN') return;
+        const cand = this.candidates.find(c => c.id === candId);
+        if (!cand) return;
+
+        if (confirm(`Are you sure you want to permanently delete candidate profile for "${cand.name}" (${cand.email})?`)) {
+            this.candidates = this.candidates.filter(c => c.id !== candId);
+            this.saveStateToStorage();
+            this.filterCandidateDatabase();
+            this.logAdminAction('DELETE_CANDIDATE', `Permanently deleted candidate profile ${cand.email}`);
+            alert(`Candidate "${cand.name}" deleted permanently.`);
+        }
+    }
+
     toggleCandidateStatus(candId) {
         if (this.currentRole !== 'ADMIN') return;
         const cand = this.candidates.find(c => c.id === candId);
@@ -970,40 +984,122 @@ class RozgaarMitraApp {
         }
     }
 
+    // FULL DETAILED CANDIDATE DATABASE FILTER & RENDER FOR ADMIN
     filterCandidateDatabase() {
         if (this.currentRole !== 'ADMIN') return;
         const container = document.getElementById('candidateDatabaseContainer');
         if (!container) return;
 
-        if (this.candidates.length === 0) {
-            container.innerHTML = `<div class="card p-5 text-center text-muted full-width">No registered candidates in database yet.</div>`;
+        const searchKey = (document.getElementById('adminCandidateSearchKey')?.value || '').toLowerCase().trim();
+        const qualFilter = document.getElementById('adminCandidateQualFilter')?.value || '';
+        const cityFilter = document.getElementById('adminCandidateCityFilter')?.value || '';
+
+        let list = [...this.candidates];
+
+        if (searchKey) {
+            list = list.filter(c => 
+                (c.name && c.name.toLowerCase().includes(searchKey)) ||
+                (c.email && c.email.toLowerCase().includes(searchKey)) ||
+                (c.mobile && c.mobile.includes(searchKey)) ||
+                (c.skills && c.skills.some(s => s.toLowerCase().includes(searchKey)))
+            );
+        }
+
+        if (qualFilter) {
+            list = list.filter(c => c.qualification && c.qualification.includes(qualFilter));
+        }
+
+        if (cityFilter) {
+            list = list.filter(c => c.preferredCity && c.preferredCity.includes(cityFilter));
+        }
+
+        if (list.length === 0) {
+            container.innerHTML = `
+                <div class="card p-5 text-center text-muted">
+                    <i class="fa-solid fa-users-slash fa-2x mb-3 text-primary d-block"></i>
+                    <h3>No candidates found in database.</h3>
+                    <p class="mt-1">Candidates who register or save profiles will appear here with full details.</p>
+                </div>
+            `;
             return;
         }
 
-        container.innerHTML = this.candidates.map(c => `
-            <div class="card p-3">
-                <div style="display:flex; align-items:center; justify-content:space-between;" class="mb-2">
-                    <div style="display:flex; align-items:center; gap:0.75rem;">
-                        ${c.photoUrl ? 
-                            `<img src="${c.photoUrl}" style="width:44px; height:44px; border-radius:50%; object-fit:cover;">` : 
-                            `<div style="width:44px; height:44px; border-radius:50%; background:#002b66; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold;">${this.sanitizeHTML(c.name).substring(0, 2).toUpperCase()}</div>`
-                        }
-                        <div>
-                            <h3>${this.sanitizeHTML(c.name)}</h3>
-                            <p class="text-secondary text-sm">${this.sanitizeHTML(c.email)} • ${this.sanitizeHTML(c.mobile)}</p>
+        container.innerHTML = list.map(c => {
+            const isSusp = c.isSuspended;
+            const safeName = this.sanitizeHTML(c.name || 'Candidate');
+            const safeEmail = this.sanitizeHTML(c.email || 'N/A');
+            const safeMobile = this.sanitizeHTML(c.mobile || 'N/A');
+            const safeQual = this.sanitizeHTML(c.qualification || '12th Pass');
+            const safeExp = this.sanitizeHTML(c.experienceYears || 'Fresher');
+            const safePrefCat = this.sanitizeHTML(c.preferredCategory || 'Not specified');
+            const safePrefCity = this.sanitizeHTML(c.preferredCity || 'Not specified');
+            const safeSalMin = c.expectedSalaryMin ? `₹${c.expectedSalaryMin}` : 'N/A';
+            const safeSalMax = c.expectedSalaryMax ? `₹${c.expectedSalaryMax}` : 'N/A';
+
+            return `
+                <div class="card p-4 mb-3" style="border-left: 5px solid ${isSusp ? '#dc2626' : '#002b66'}; border-radius:10px;">
+                    <div class="flex-between mb-3 border-bottom pb-3">
+                        <div style="display:flex; align-items:center; gap:1rem;">
+                            ${c.photoUrl ? 
+                                `<img src="${c.photoUrl}" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid #002b66;">` : 
+                                `<div style="width:60px; height:60px; border-radius:50%; background:#002b66; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.4rem;">${safeName.substring(0, 2).toUpperCase()}</div>`
+                            }
+                            <div>
+                                <h3 style="font-size:1.2rem; margin:0;">${safeName}</h3>
+                                <p class="text-secondary text-sm">
+                                    <i class="fa-solid fa-envelope text-primary"></i> <strong>${safeEmail}</strong> | 
+                                    <i class="fa-solid fa-phone text-success"></i> <strong>${safeMobile}</strong>
+                                </p>
+                                <span class="badge ${isSusp ? 'badge-danger' : 'badge-success'} mt-1">
+                                    ${isSusp ? '🚨 Account Suspended' : '✅ Active Registered Candidate'}
+                                </span>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:0.5rem;">
+                            <a href="tel:${safeMobile}" class="btn btn-outline btn-sm text-success" title="Call Candidate"><i class="fa-solid fa-phone"></i> Call</a>
+                            <a href="mailto:${safeEmail}" class="btn btn-outline btn-sm text-primary" title="Email Candidate"><i class="fa-solid fa-envelope"></i> Email</a>
+                            <button class="btn btn-outline btn-sm ${isSusp ? 'text-success' : 'text-warning'}" onclick="app.toggleCandidateStatus('${c.id}')">
+                                ${isSusp ? 'Unblock' : 'Suspend'}
+                            </button>
+                            <button class="btn btn-outline btn-sm text-danger" onclick="app.deleteCandidate('${c.id}')" title="Delete Profile"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
-                    <button class="btn btn-outline btn-sm ${c.isSuspended ? 'text-success' : 'text-danger'}" onclick="app.toggleCandidateStatus('${c.id}')">
-                        ${c.isSuspended ? 'Unblock' : 'Suspend'}
-                    </button>
+
+                    <div class="form-grid mb-3 text-sm">
+                        <div><strong>Academic Qualification:</strong> ${safeQual}</div>
+                        <div><strong>Total Experience:</strong> ${safeExp}</div>
+                        <div><strong>Date of Birth:</strong> ${c.dob || 'Not specified'}</div>
+                        <div><strong>Gender:</strong> ${c.gender || 'Not specified'}</div>
+                        <div><strong>Preferred Job Category:</strong> <span class="badge badge-primary">${safePrefCat}</span></div>
+                        <div><strong>Preferred Working City:</strong> ${safePrefCity}</div>
+                        <div><strong>Expected Salary Range:</strong> <strong class="text-success">${safeSalMin} - ${safeSalMax} / month</strong></div>
+                        <div><strong>Current Location:</strong> ${this.sanitizeHTML(c.location || 'India')}</div>
+                    </div>
+
+                    ${c.resumeFileName ? 
+                        `<div class="p-3 mb-3" style="background:#f1f5f9; border-radius:8px; display:flex; align-items:center; justify-content:space-between;">
+                            <div>
+                                <i class="fa-solid fa-file-pdf text-danger fa-lg"></i> 
+                                <strong>Uploaded Resume:</strong> ${this.sanitizeHTML(c.resumeFileName)} (${c.resumeFileSize || 'PDF'})
+                                <small class="text-muted d-block">Uploaded on ${c.resumeUploadDate || 'Saved'}</small>
+                            </div>
+                            <span class="badge badge-success"><i class="fa-solid fa-check"></i> Resume Attached</span>
+                         </div>` : 
+                        `<p class="text-muted text-sm mb-2"><i class="fa-solid fa-file-excel"></i> No resume document uploaded yet.</p>`
+                    }
+
+                    <div>
+                        <strong class="text-sm d-block mb-1">Candidate Skills & Competencies:</strong>
+                        <div class="job-skills-tags">
+                            ${(c.skills || []).length > 0 ? 
+                                (c.skills || []).map(s => `<span class="skill-tag">${this.sanitizeHTML(s)}</span>`).join('') :
+                                `<span class="text-muted text-sm">No skills added yet.</span>`
+                            }
+                        </div>
+                    </div>
                 </div>
-                <p class="text-sm">Qualification: <strong>${this.sanitizeHTML(c.qualification)}</strong> | Pref: <strong>${this.sanitizeHTML(c.preferredCategory || 'Any')}</strong> (${this.sanitizeHTML(c.preferredCity || 'Any')})</p>
-                ${c.resumeFileName ? `<p class="text-sm text-success mt-1"><i class="fa-solid fa-file-pdf"></i> Resume: ${this.sanitizeHTML(c.resumeFileName)}</p>` : ''}
-                <div class="job-skills-tags mt-2">
-                    ${(c.skills || []).map(s => `<span class="skill-tag">${this.sanitizeHTML(s)}</span>`).join('')}
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     updateProfileCompletion() {
@@ -1471,13 +1567,11 @@ class RozgaarMitraApp {
         const authBox = document.getElementById('authBox');
 
         if (this.currentRole === 'ADMIN') {
-            // HIDE SEEKER LINKS WHEN ADMIN ROLE IS ACTIVE FOR 100% ADMIN DASHBOARD EXPERIENCE
             document.querySelectorAll('.seeker-only').forEach(e => e.classList.add('hidden'));
             document.querySelectorAll('.admin-only').forEach(e => e.classList.remove('hidden'));
             if (exitAdminBtn) exitAdminBtn.classList.remove('hidden');
             if (authBox) authBox.classList.add('hidden');
             
-            // IF CURRENT VIEW IS CANDIDATE HOME, AUTOMATICALLY SWITCH TO ADMIN DASHBOARD
             if (this.currentView === 'home' || this.currentView === 'profile') {
                 this.navigateTo('admin-dashboard');
             }
@@ -1504,7 +1598,7 @@ class RozgaarMitraApp {
         } else {
             document.querySelectorAll('.seeker-only').forEach(e => e.classList.add('hidden'));
             document.querySelectorAll('.admin-only').forEach(e => e.classList.add('hidden'));
-            if (authBox) authBox.remove('hidden');
+            if (authBox) authBox.classList.remove('hidden');
             document.getElementById('userProfileMenu')?.classList.add('hidden');
         }
     }
