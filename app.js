@@ -1,7 +1,7 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - PURE PRODUCTION CORE ENGINE
  * Candidate view/apply, Photo & Resume file upload, Real Generated 6-Digit OTP verification,
- * Secret Invisible Admin Portal (Passcode: Admin@75100, Triggers: Ctrl+Shift+A or Triple-Click Footer Copyright or #admin URL),
+ * Secret Invisible Admin Portal (Passcode: Admin@75100, Triggers: Ctrl+Shift+A or Triple-Click Footer Copyright or https://www.rozgaarmitra.com/#admin),
  * Job Management with Delete Confirmation, Vacancy Full / Hiring Closed controls, and login-gated navbar visibility.
  */
 
@@ -48,11 +48,19 @@ class RozgaarMitraApp {
         }
 
         // Secret URL Hash check: rozgaarmitra.com/#admin
+        this.checkAdminHash();
+
+        window.addEventListener('hashchange', () => {
+            this.checkAdminHash();
+        });
+        
+        this.updateUserUI();
+    }
+
+    checkAdminHash() {
         if (window.location.hash === '#admin') {
             this.openAdminLoginModal();
         }
-        
-        this.updateUserUI();
     }
 
     setupSecretAdminTriggers() {
@@ -159,6 +167,7 @@ class RozgaarMitraApp {
         if (code === this.adminPasscodeSecret) {
             this.currentRole = 'ADMIN';
             this.closeModal('adminAuthModal');
+            history.pushState('', document.title, window.location.pathname);
             this.updateUserUI();
             alert('🔒 Secret Access Granted!\n\nAll management options unlocked.');
             this.navigateTo('admin-dashboard');
@@ -818,7 +827,7 @@ class RozgaarMitraApp {
                     <td>
                         <button class="btn btn-outline btn-sm mr-1" onclick="app.editJob('${j.id}')" title="Edit Job"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
                         <button class="btn btn-${isClosed ? 'success' : 'warning'} btn-sm mr-1" onclick="app.toggleHiringClosed('${j.id}')">
-                            <i class="fa-solid fa-lock-open" : 'lock'}></i> ${isClosed ? 'Re-open' : 'Close Vacancy'}
+                            <i class="fa-solid fa-${isClosed ? 'lock-open' : 'lock'}"></i> ${isClosed ? 'Re-open' : 'Close Vacancy'}
                         </button>
                         <button class="btn btn-outline btn-sm text-danger" onclick="app.deleteJob('${j.id}')" title="Delete Job"><i class="fa-solid fa-trash"></i> Delete</button>
                     </td>
