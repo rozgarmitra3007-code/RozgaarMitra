@@ -1,9 +1,8 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - 100% PRODUCTION CORE ENGINE
  * 
- * STRICT DIRECTIVE:
- * Removed ALL seed/dummy initial jobs!
- * The jobs database starts COMPLETELY EMPTY. Only jobs explicitly posted by the Admin are displayed.
+ * OFFICIAL ADMIN CONFIGURED: rozgarmitra3007@gmail.com
+ * Official Admin Password: Admin@75100
  */
 
 class RozgaarMitraApp {
@@ -29,6 +28,7 @@ class RozgaarMitraApp {
         this.selectedSkills = ['Tally Prime', 'MS Excel'];
 
         // Admin Security Config
+        this.officialAdminEmail = 'rozgarmitra3007@gmail.com';
         this.adminPasswordSecret = 'Admin@75100'; // Secret Official Admin Password
         this.failedAdminAttempts = 0;
         this.adminLockoutTime = 0;
@@ -51,7 +51,7 @@ class RozgaarMitraApp {
 
     init() {
         this.loadStateFromStorage();
-        this.purgeInitialSeedJobs(); // Clean wipe of any old initial seed jobs
+        this.purgeInitialSeedJobs();
         this.setupTheme();
         this.renderCategoryCards();
         this.renderFeaturedJobs();
@@ -100,7 +100,6 @@ class RozgaarMitraApp {
     }
 
     purgeInitialSeedJobs() {
-        // Remove old pre-seeded initial jobs (job-101 through job-110)
         if (this.jobs && this.jobs.length > 0) {
             this.jobs = this.jobs.filter(j => !j.id.startsWith('job-10') && !j.id.startsWith('job-11'));
             this.saveStateToStorage();
@@ -350,7 +349,7 @@ class RozgaarMitraApp {
             return;
         }
 
-        document.getElementById('adminEmailInput').value = '';
+        document.getElementById('adminEmailInput').value = this.officialAdminEmail;
         document.getElementById('adminPasswordInput').value = '';
         document.getElementById('admin2faGroup').classList.add('hidden');
         document.getElementById('admin2faOtpInput').value = '';
@@ -391,7 +390,7 @@ class RozgaarMitraApp {
             }).catch(e => console.warn('2FA Email dispatch notice:', e));
         } catch(e){}
 
-        alert(`🔒 Admin 2FA Security Code Sent!\n\nA 6-digit 2FA verification OTP has been sent for ${email}.\n\nPlease check your email inbox (and spam folder) to unlock the Admin Panel.`);
+        alert(`🔒 Admin 2FA Security Code Sent!\n\nA 6-digit 2FA verification OTP has been sent to ${email}.\n\nPlease check your email inbox to unlock the Admin Panel.`);
     }
 
     verifyAdminPasscode(event) {
@@ -425,7 +424,7 @@ class RozgaarMitraApp {
             this.closeModal('adminAuthModal');
             try { history.pushState('', document.title, window.location.pathname); } catch(e){}
             this.updateUserUI();
-            alert('🔒 Admin 2FA Authentication Successful!\n\nAll management options unlocked.');
+            alert(`🔒 Admin 2FA Authentication Successful!\n\nLogged in as Official Admin (${this.officialAdminEmail}). All management options unlocked.`);
             this.navigateTo('admin-dashboard');
         } else {
             alert('Incorrect 2FA Security OTP Code! Please enter the exact 6-digit OTP code sent to your email.');
