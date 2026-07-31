@@ -597,7 +597,7 @@
 
     </main>
 
-    <!-- FOOTER WITH DISCRETE ADMIN LOGIN LINK AT VERY BOTTOM -->
+    <!-- FOOTER WITH ZERO VISIBLE ADMIN LINK FOR CANDIDATES -->
     <footer class="main-footer">
         <div class="container footer-grid">
             <div class="footer-col brand-col">
@@ -638,8 +638,8 @@
 
         <div class="footer-bottom text-center">
             <div class="container">
-                <p>&copy; 2026 Rozgaar Mitra (rozgaarmitra.com). All Rights Reserved. Indian Private Sector Job Consultancy. 
-                <a href="#" onclick="app.openAdminLoginModal()" style="color:#64748b; font-size:0.72rem; text-decoration:none; opacity:0.5; margin-left:12px;" title="Internal Portal"><i class="fa-solid fa-lock"></i> Admin Portal</a>
+                <p id="copyrightText" style="cursor:pointer; user-select:none;" title="Rozgaar Mitra Official">
+                    &copy; 2026 Rozgaar Mitra (rozgaarmitra.com). All Rights Reserved. Indian Private Sector Job Consultancy.
                 </p>
             </div>
         </div>
@@ -730,7 +730,7 @@
         </div>
     </div>
 
-    <!-- DISCRETE ADMIN PORTAL LOGIN MODAL -->
+    <!-- SECRET ADMIN PORTAL LOGIN MODAL -->
     <div class="modal-backdrop hidden" id="adminAuthModal">
         <div class="modal-card" style="max-width:400px;">
             <button class="modal-close" onclick="app.closeModal('adminAuthModal')"><i class="fa-solid fa-xmark"></i></button>
@@ -826,13 +826,13 @@
     <!-- JS Core Engine -->
     <script src="app.js"></script>
     
-    <!-- Register PWA Service Worker for Mobile App Installation -->
+    <!-- Register PWA Service Worker -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('Rozgaar Mitra PWA Service Worker Registered!'))
-                    .catch(err => console.error('PWA Service Worker Error:', err));
+                    .then(reg => console.log('PWA Registered'))
+                    .catch(err => console.error(err));
             });
         }
     </script>

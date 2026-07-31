@@ -1,8 +1,8 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - PURE PRODUCTION CORE ENGINE
  * Candidate view/apply, Photo & Resume file upload, Real Generated 6-Digit OTP verification,
- * Discrete Footer Admin Portal Login with Secret Passcode (Admin@75100), Job Management with Delete Confirmation,
- * Edit, Vacancy Full / Hiring Closed controls, and strict login-gated navbar visibility.
+ * Secret Invisible Admin Portal (Passcode: Admin@75100, Triggers: Ctrl+Shift+A or Triple-Click Footer Copyright or #admin URL),
+ * Job Management with Delete Confirmation, Vacancy Full / Hiring Closed controls, and login-gated navbar visibility.
  */
 
 class RozgaarMitraApp {
@@ -15,6 +15,8 @@ class RozgaarMitraApp {
         this.candidatePhotoDataUrl = null;
         this.candidateResumeFileName = null;
         this.adminPasscodeSecret = 'Admin@75100'; // Secret Official Admin Password
+        this.copyrightClickCount = 0;
+        this.copyrightClickTimer = null;
         
         this.availableSkills = [
             'Tally Prime', 'GST Filing', 'MS Excel', 'Data Entry', 'English Speaking', 
@@ -35,6 +37,7 @@ class RozgaarMitraApp {
         this.renderSkillsTagSelector();
         this.applyJobFilters();
         this.updateStatsCounters();
+        this.setupSecretAdminTriggers();
 
         const savedUser = localStorage.getItem('rm_current_user');
         if (savedUser) {
@@ -43,8 +46,40 @@ class RozgaarMitraApp {
             this.candidateResumeFileName = this.currentUser.resumeFileName || null;
             this.loadProfileIntoForm();
         }
+
+        // Secret URL Hash check: rozgaarmitra.com/#admin
+        if (window.location.hash === '#admin') {
+            this.openAdminLoginModal();
+        }
         
         this.updateUserUI();
+    }
+
+    setupSecretAdminTriggers() {
+        // 1. Secret Keyboard Shortcut: Ctrl + Shift + A
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+                e.preventDefault();
+                this.openAdminLoginModal();
+            }
+        });
+
+        // 2. Secret Triple Click Gesture on Footer Copyright Text
+        const copyEl = document.getElementById('copyrightText');
+        if (copyEl) {
+            copyEl.addEventListener('click', () => {
+                this.copyrightClickCount++;
+                clearTimeout(this.copyrightClickTimer);
+                if (this.copyrightClickCount >= 3) {
+                    this.copyrightClickCount = 0;
+                    this.openAdminLoginModal();
+                } else {
+                    this.copyrightClickTimer = setTimeout(() => {
+                        this.copyrightClickCount = 0;
+                    }, 1200);
+                }
+            });
+        }
     }
 
     loadStateFromStorage() {
@@ -112,7 +147,7 @@ class RozgaarMitraApp {
         if (pageId === 'admin-candidates') this.filterCandidateDatabase();
     }
 
-    // DISCRETE FOOTER ADMIN LOGIN & PASSCODE VERIFICATION (Admin@75100)
+    // SECRET INVISIBLE ADMIN LOGIN & PASSCODE VERIFICATION (Admin@75100)
     openAdminLoginModal() {
         document.getElementById('adminPasscodeInput').value = '';
         document.getElementById('adminAuthModal').classList.remove('hidden');
@@ -125,7 +160,7 @@ class RozgaarMitraApp {
             this.currentRole = 'ADMIN';
             this.closeModal('adminAuthModal');
             this.updateUserUI();
-            alert('🔒 Admin Access Granted!\n\nAll platform options unlocked: Job Management, Candidate Pool Search, Resume Downloads, Application Status Editing, and Vacancy Posting.');
+            alert('🔒 Secret Admin Access Granted!\n\nAll admin management options unlocked.');
             this.navigateTo('admin-dashboard');
         } else {
             alert('Incorrect Admin Passcode! Access Denied.');
