@@ -1,8 +1,7 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - 100% PRODUCTION CORE ENGINE
  * 
- * DEDICATED ADMIN LEFT SIDEBAR CONTROL CENTER:
- * Clean, uncluttered layout with professional Admin Sidebar
+ * CLEAN USER UI & ADMIN NAVIGATION ENGINE
  */
 
 class RozgaarMitraApp {
@@ -1468,11 +1467,13 @@ class RozgaarMitraApp {
 
     updateUserUI() {
         const exitAdminBtn = document.getElementById('adminExitHeaderBtn');
+        const authBox = document.getElementById('authBox');
 
         if (this.currentRole === 'ADMIN') {
             document.querySelectorAll('.seeker-only').forEach(e => e.classList.remove('hidden'));
             document.querySelectorAll('.admin-only').forEach(e => e.classList.remove('hidden'));
             if (exitAdminBtn) exitAdminBtn.classList.remove('hidden');
+            if (authBox) authBox.classList.add('hidden');
             return;
         }
 
@@ -1481,7 +1482,7 @@ class RozgaarMitraApp {
         if (this.currentUser) {
             document.querySelectorAll('.seeker-only').forEach(e => e.classList.remove('hidden'));
             document.querySelectorAll('.admin-only').forEach(e => e.classList.add('hidden'));
-            document.getElementById('authBox')?.classList.add('hidden');
+            if (authBox) authBox.classList.add('hidden');
             document.getElementById('userProfileMenu')?.classList.remove('hidden');
             
             const avatarEl = document.getElementById('navAvatar');
@@ -1496,7 +1497,7 @@ class RozgaarMitraApp {
         } else {
             document.querySelectorAll('.seeker-only').forEach(e => e.classList.add('hidden'));
             document.querySelectorAll('.admin-only').forEach(e => e.classList.add('hidden'));
-            document.getElementById('authBox')?.classList.remove('hidden');
+            if (authBox) authBox.classList.remove('hidden');
             document.getElementById('userProfileMenu')?.classList.add('hidden');
         }
     }
