@@ -105,7 +105,8 @@
                 
                 <div class="auth-box" id="authBox">
                     <button class="btn btn-outline btn-sm" onclick="app.openAuthModal('email-otp')"><i class="fa-solid fa-envelope"></i> Email OTP Login</button>
-                    <button class="btn btn-primary btn-sm" onclick="app.openAuthModal('register')"><i class="fa-solid fa-user-plus"></i> Register</button>
+                    <button class="btn btn-primary btn-sm" onclick="app.openAuthModal('register')"><i class="fa-solid fa-user-plus"></i> Candidate Register</button>
+                    <button class="btn btn-outline btn-sm text-primary" onclick="app.openAdminLoginModal()" style="border-color:#002b66; font-weight:600;"><i class="fa-solid fa-user-shield"></i> Admin Login</button>
                 </div>
 
                 <div class="user-profile-menu hidden" id="userProfileMenu">
@@ -1174,7 +1175,7 @@
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
                     .then(reg => console.log('PWA Registered'))
-                    .catch(err => console.error(err));
+                    .catch(err => console.err(err));
             });
         }
     </script>
