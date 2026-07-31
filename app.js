@@ -1,7 +1,8 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - 100% PRODUCTION CORE ENGINE
  * 
- * COMPLETE DETAILED CANDIDATE DATABASE MANAGER FOR ADMIN PORTAL
+ * REAL-TIME ADMIN PORTAL SYNCHRONIZATION ENGINE:
+ * Instant multi-tab & cross-session updates via BroadcastChannel & LocalStorage Events
  */
 
 class RozgaarMitraApp {
@@ -37,6 +38,13 @@ class RozgaarMitraApp {
         this.copyrightClickTimer = null;
         this.searchDebounceTimer = null;
 
+        // Real-Time Inter-Tab Broadcast Channel
+        try {
+            this.syncChannel = new BroadcastChannel('rm_realtime_sync');
+        } catch(e) {
+            this.syncChannel = null;
+        }
+
         this.availableSkills = [
             'Tally Prime', 'GST Filing', 'MS Excel', 'Data Entry', 'English Speaking', 
             'Hindi Typing', 'Customer Support', 'Telecalling', 'Field Sales', 'B2B Sales',
@@ -59,6 +67,7 @@ class RozgaarMitraApp {
         this.updateStatsCounters();
         this.setupSecretAdminTriggers();
         this.setupAdminInactivityMonitor();
+        this.setupRealtimeSyncListeners();
         this.updateGoogleJobPostingSchema();
 
         const savedUser = this.getStorageItem('rm_current_user');
@@ -97,6 +106,50 @@ class RozgaarMitraApp {
         });
         
         this.updateUserUI();
+    }
+
+    setupRealtimeSyncListeners() {
+        // Multi-Tab LocalStorage Real-Time Listener
+        window.addEventListener('storage', (e) => {
+            this.loadStateFromStorage();
+            this.updateStatsCounters();
+            if (this.currentRole === 'ADMIN') {
+                if (this.currentView === 'admin-candidates') this.filterCandidateDatabase();
+                if (this.currentView === 'admin-dashboard') this.renderAdminDashboard();
+                if (this.currentView === 'admin-jobs') this.renderAdminJobsTable();
+                if (this.currentView === 'admin-companies') this.renderManageCompaniesTable();
+            }
+        });
+
+        // Broadcast Channel Real-Time Broadcast Listener
+        if (this.syncChannel) {
+            this.syncChannel.onmessage = (event) => {
+                const data = event.data;
+                if (data && data.type === 'CANDIDATE_REGISTERED') {
+                    this.loadStateFromStorage();
+                    this.updateStatsCounters();
+                    if (this.currentRole === 'ADMIN') {
+                        if (this.currentView === 'admin-candidates') this.filterCandidateDatabase();
+                        if (this.currentView === 'admin-dashboard') this.renderAdminDashboard();
+                    }
+                }
+                if (data && data.type === 'APPLICATION_SUBMITTED') {
+                    this.loadStateFromStorage();
+                    this.updateStatsCounters();
+                    if (this.currentRole === 'ADMIN') {
+                        if (this.currentView === 'admin-dashboard') this.renderAdminDashboard();
+                    }
+                }
+            };
+        }
+    }
+
+    notifyRealtimeEvent(type, payload) {
+        if (this.syncChannel) {
+            try {
+                this.syncChannel.postMessage({ type, payload });
+            } catch(e){}
+        }
     }
 
     purgeInitialSeedJobs() {
@@ -782,6 +835,7 @@ class RozgaarMitraApp {
         });
 
         this.saveStateToStorage();
+        this.notifyRealtimeEvent('APPLICATION_SUBMITTED', newApp);
         alert(`Application for "${job.title}" successfully submitted!`);
         this.navigateTo('applications');
     }
@@ -984,7 +1038,6 @@ class RozgaarMitraApp {
         }
     }
 
-    // FULL DETAILED CANDIDATE DATABASE FILTER & RENDER FOR ADMIN
     filterCandidateDatabase() {
         if (this.currentRole !== 'ADMIN') return;
         const container = document.getElementById('candidateDatabaseContainer');
@@ -1305,6 +1358,7 @@ class RozgaarMitraApp {
         else if (updated.email) this.candidates.push(updated);
 
         this.saveStateToStorage();
+        this.notifyRealtimeEvent('CANDIDATE_REGISTERED', updated);
         this.updateUserUI();
         alert('💾 Profile saved as DRAFT successfully!\n\nYou can return anytime to complete and activate your profile.');
     }
@@ -1341,6 +1395,7 @@ class RozgaarMitraApp {
         else this.candidates.push(updated);
 
         this.saveStateToStorage();
+        this.notifyRealtimeEvent('CANDIDATE_REGISTERED', updated);
         this.updateUserUI();
         this.updateProfileCompletion();
         alert('🎉 Candidate profile, photo, resume & job preferences updated and ACTIVATED!');
@@ -1445,6 +1500,7 @@ class RozgaarMitraApp {
         this.currentUser = u;
         this.setStorageItem('rm_current_user', JSON.stringify(u));
         this.saveStateToStorage();
+        this.notifyRealtimeEvent('CANDIDATE_REGISTERED', u);
         this.updateUserUI();
         this.closeModal('authModal');
         alert(`Email OTP Verification Successful! Logged in as ${email}.`);
@@ -1547,6 +1603,7 @@ class RozgaarMitraApp {
         this.candidates.push(u);
         this.setStorageItem('rm_current_user', JSON.stringify(u));
         this.saveStateToStorage();
+        this.notifyRealtimeEvent('CANDIDATE_REGISTERED', u);
         this.updateUserUI();
         this.closeModal('authModal');
         alert(`🎉 Registration & Email Verification Successful!\n\nWelcome to Rozgaar Mitra, ${name}!`);
