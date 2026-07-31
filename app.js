@@ -119,11 +119,12 @@ class RozgaarMitraApp {
     async syncWithCloudAPI(isBackground = false) {
         try {
             // Fetch Candidates from Cloud API
-            const candRes = await fetch('/api/candidates');
+            let candRes = await fetch('/api/candidates');
+            if (!candRes.ok) candRes = await fetch('/api/candidates.js');
+
             if (candRes.ok) {
                 const candData = await candRes.json();
                 if (candData.candidates && Array.isArray(candData.candidates)) {
-                    // Merge Cloud Candidates with LocalStorage
                     candData.candidates.forEach(cc => {
                         const idx = this.candidates.findIndex(c => c.email.toLowerCase() === cc.email.toLowerCase());
                         if (idx >= 0) {
@@ -141,7 +142,9 @@ class RozgaarMitraApp {
 
         try {
             // Fetch Applications from Cloud API
-            const appRes = await fetch('/api/applications');
+            let appRes = await fetch('/api/applications');
+            if (!appRes.ok) appRes = await fetch('/api/applications.js');
+
             if (appRes.ok) {
                 const appData = await appRes.json();
                 if (appData.applications && Array.isArray(appData.applications)) {
@@ -169,11 +172,18 @@ class RozgaarMitraApp {
 
     async pushCandidateToCloudAPI(candidateObj) {
         try {
-            await fetch('/api/candidates', {
+            let res = await fetch('/api/candidates', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(candidateObj)
             });
+            if (!res.ok) {
+                await fetch('/api/candidates.js', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(candidateObj)
+                });
+            }
         } catch(e) {
             console.warn('Push Candidate Cloud API notice:', e);
         }
@@ -181,11 +191,18 @@ class RozgaarMitraApp {
 
     async pushApplicationToCloudAPI(appObj) {
         try {
-            await fetch('/api/applications', {
+            let res = await fetch('/api/applications', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(appObj)
             });
+            if (!res.ok) {
+                await fetch('/api/applications.js', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(appObj)
+                });
+            }
         } catch(e) {
             console.warn('Push Application Cloud API notice:', e);
         }
@@ -215,14 +232,6 @@ class RozgaarMitraApp {
                     }
                 }
             };
-        }
-    }
-
-    notifyRealtimeEvent(type, payload) {
-        if (this.syncChannel) {
-            try {
-                this.syncChannel.postMessage({ type, payload });
-            } catch(e){}
         }
     }
 
