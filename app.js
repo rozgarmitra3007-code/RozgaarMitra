@@ -1,7 +1,7 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - 100% PRODUCTION CORE ENGINE
  * 
- * CLEAN DATA & REAL-TIME ADMIN PORTAL SYNCHRONIZATION ENGINE
+ * REAL-TIME CLOUD DATABASE SYNCHRONIZATION ENGINE
  */
 
 class RozgaarMitraApp {
@@ -55,10 +55,9 @@ class RozgaarMitraApp {
         this.init();
     }
 
-    init() {
+    async init() {
         this.loadStateFromStorage();
         this.purgeInitialSeedJobs();
-        this.purgeDummyTestingCandidates();
         this.setupTheme();
         this.renderCategoryCards();
         this.renderFeaturedJobs();
@@ -69,6 +68,14 @@ class RozgaarMitraApp {
         this.setupAdminInactivityMonitor();
         this.setupRealtimeSyncListeners();
         this.updateGoogleJobPostingSchema();
+
+        // Cloud API Fetch & Sync
+        await this.syncWithCloudAPI();
+
+        // Poll Cloud API every 4 seconds for live candidate updates across all devices
+        setInterval(() => {
+            this.syncWithCloudAPI(true);
+        }, 4000);
 
         const savedUser = this.getStorageItem('rm_current_user');
         if (savedUser) {
@@ -108,24 +115,79 @@ class RozgaarMitraApp {
         this.updateUserUI();
     }
 
-    // PURGE ANY DUMMY / SAMPLE TEST CANDIDATES & APPLICATIONS FROM EARLY TESTING
-    purgeDummyTestingCandidates() {
-        let changed = false;
-        if (this.candidates && this.candidates.length > 0) {
-            const initialCount = this.candidates.length;
-            // Filter out candidates with dummy test mobile "+91 9876543210" or dummy auto-created entries
-            this.candidates = this.candidates.filter(c => c.mobile !== '+91 9876543210' && c.name !== 'krtanuj007');
-            if (this.candidates.length !== initialCount) changed = true;
+    // CLOUD API SYNCHRONIZATION ENGINE
+    async syncWithCloudAPI(isBackground = false) {
+        try {
+            // Fetch Candidates from Cloud API
+            const candRes = await fetch('/api/candidates');
+            if (candRes.ok) {
+                const candData = await candRes.json();
+                if (candData.candidates && Array.isArray(candData.candidates)) {
+                    // Merge Cloud Candidates with LocalStorage
+                    candData.candidates.forEach(cc => {
+                        const idx = this.candidates.findIndex(c => c.email.toLowerCase() === cc.email.toLowerCase());
+                        if (idx >= 0) {
+                            this.candidates[idx] = { ...this.candidates[idx], ...cc };
+                        } else {
+                            this.candidates.push(cc);
+                        }
+                    });
+                    this.saveStateToStorage();
+                }
+            }
+        } catch(e) {
+            console.warn('Cloud Candidates API Sync notice:', e);
         }
 
-        if (this.applications && this.applications.length > 0) {
-            const initialAppCount = this.applications.length;
-            this.applications = this.applications.filter(a => a.candidateMobile !== '+91 9876543210' && a.candidateName !== 'krtanuj007');
-            if (this.applications.length !== initialAppCount) changed = true;
+        try {
+            // Fetch Applications from Cloud API
+            const appRes = await fetch('/api/applications');
+            if (appRes.ok) {
+                const appData = await appRes.json();
+                if (appData.applications && Array.isArray(appData.applications)) {
+                    appData.applications.forEach(ca => {
+                        const idx = this.applications.findIndex(a => a.id === ca.id);
+                        if (idx >= 0) {
+                            this.applications[idx] = { ...this.applications[idx], ...ca };
+                        } else {
+                            this.applications.push(ca);
+                        }
+                    });
+                    this.saveStateToStorage();
+                }
+            }
+        } catch(e) {
+            console.warn('Cloud Applications API Sync notice:', e);
         }
 
-        if (changed) {
-            this.saveStateToStorage();
+        this.updateStatsCounters();
+        if (this.currentRole === 'ADMIN') {
+            if (this.currentView === 'admin-candidates') this.filterCandidateDatabase();
+            if (this.currentView === 'admin-dashboard') this.renderAdminDashboard();
+        }
+    }
+
+    async pushCandidateToCloudAPI(candidateObj) {
+        try {
+            await fetch('/api/candidates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(candidateObj)
+            });
+        } catch(e) {
+            console.warn('Push Candidate Cloud API notice:', e);
+        }
+    }
+
+    async pushApplicationToCloudAPI(appObj) {
+        try {
+            await fetch('/api/applications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(appObj)
+            });
+        } catch(e) {
+            console.warn('Push Application Cloud API notice:', e);
         }
     }
 
@@ -847,6 +909,7 @@ class RozgaarMitraApp {
         });
 
         this.saveStateToStorage();
+        this.pushApplicationToCloudAPI(newApp);
         this.notifyRealtimeEvent('APPLICATION_SUBMITTED', newApp);
         alert(`Application for "${job.title}" successfully submitted!`);
         this.navigateTo('applications');
@@ -1024,15 +1087,24 @@ class RozgaarMitraApp {
         alert(`Employer Company "${name}" added and verified!`);
     }
 
-    deleteCandidate(candId) {
+    async deleteCandidate(candId) {
         if (this.currentRole !== 'ADMIN') return;
         const cand = this.candidates.find(c => c.id === candId);
         if (!cand) return;
 
         if (confirm(`Are you sure you want to permanently delete candidate profile for "${cand.name}" (${cand.email})?`)) {
             this.candidates = this.candidates.filter(c => c.id !== candId);
-            this.applications = this.applications.filter(a => a.candidateEmail !== cand.email);
+            this.applications = this.applications.filter(a => a.candidateEmail.toLowerCase() !== cand.email.toLowerCase());
             this.saveStateToStorage();
+
+            try {
+                await fetch('/api/candidates', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: candId, email: cand.email })
+                });
+            } catch(e){}
+
             this.filterCandidateDatabase();
             this.renderAdminDashboard();
             this.logAdminAction('DELETE_CANDIDATE', `Permanently deleted candidate profile ${cand.email}`);
@@ -1046,6 +1118,7 @@ class RozgaarMitraApp {
         if (cand) {
             cand.isSuspended = !cand.isSuspended;
             this.saveStateToStorage();
+            this.pushCandidateToCloudAPI(cand);
             this.filterCandidateDatabase();
             this.logAdminAction('CANDIDATE_STATUS_TOGGLE', `Updated candidate ${cand.email} status to ${cand.isSuspended ? 'Suspended' : 'Active'}`);
             alert(`Candidate account status updated to ${cand.isSuspended ? 'Suspended' : 'Active'}.`);
@@ -1373,6 +1446,7 @@ class RozgaarMitraApp {
         else if (updated.email) this.candidates.push(updated);
 
         this.saveStateToStorage();
+        this.pushCandidateToCloudAPI(updated);
         this.notifyRealtimeEvent('CANDIDATE_REGISTERED', updated);
         this.updateUserUI();
         alert('💾 Profile saved as DRAFT successfully!\n\nYou can return anytime to complete and activate your profile.');
@@ -1410,6 +1484,7 @@ class RozgaarMitraApp {
         else this.candidates.push(updated);
 
         this.saveStateToStorage();
+        this.pushCandidateToCloudAPI(updated);
         this.notifyRealtimeEvent('CANDIDATE_REGISTERED', updated);
         this.updateUserUI();
         this.updateProfileCompletion();
@@ -1515,6 +1590,7 @@ class RozgaarMitraApp {
         this.currentUser = u;
         this.setStorageItem('rm_current_user', JSON.stringify(u));
         this.saveStateToStorage();
+        this.pushCandidateToCloudAPI(u);
         this.notifyRealtimeEvent('CANDIDATE_REGISTERED', u);
         this.updateUserUI();
         this.closeModal('authModal');
@@ -1618,6 +1694,7 @@ class RozgaarMitraApp {
         this.candidates.push(u);
         this.setStorageItem('rm_current_user', JSON.stringify(u));
         this.saveStateToStorage();
+        this.pushCandidateToCloudAPI(u);
         this.notifyRealtimeEvent('CANDIDATE_REGISTERED', u);
         this.updateUserUI();
         this.closeModal('authModal');
