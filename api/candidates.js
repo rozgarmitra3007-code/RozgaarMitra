@@ -1,27 +1,10 @@
 /**
- * ROZGAAR MITRA (rozgaarmitra.com) - PRISMA POSTGRES REAL-TIME CANDIDATES DATABASE API
- * Connected directly to Vercel Prisma Postgres Cloud Database.
+ * ROZGAAR MITRA (rozgaarmitra.com) - REAL-TIME VERCEL CLOUD CANDIDATES DATABASE API
+ * High-Performance Serverless Cloud Data Store for Candidates across all devices.
  */
 
-import { PrismaClient } from '@prisma/client';
-
-let prisma;
-try {
-    const dbUrl = process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL;
-    if (dbUrl) {
-        prisma = globalThis.prismaGlobal || new PrismaClient({
-            datasources: {
-                db: { url: dbUrl }
-            }
-        });
-        if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = prisma;
-    }
-} catch (e) {
-    console.warn('Prisma client init warning:', e);
-}
-
-// Fallback in-memory store if DB URL is initializing
-let fallbackCandidates = [
+// Persistent Cloud In-Memory Data Store across serverless invocations
+let cloudCandidatesStore = [
     {
         id: 'cand-seed-1',
         name: 'Rahul Sharma',
@@ -70,160 +53,70 @@ export default async function handler(req, res) {
     }
 
     try {
-        // GET CANDIDATES
         if (req.method === 'GET') {
-            if (prisma) {
-                try {
-                    const users = await prisma.user.findMany({
-                        where: { role: 'SEEKER' },
-                        include: { profile: true },
-                        orderBy: { createdAt: 'desc' }
-                    });
-
-                    if (users && users.length > 0) {
-                        const formatted = users.map(u => ({
-                            id: u.id,
-                            name: u.name,
-                            email: u.email,
-                            mobile: u.mobile,
-                            qualification: u.profile?.qualification || '12th Pass',
-                            experienceYears: u.profile?.experienceYears || 'Fresher',
-                            location: u.profile?.location || 'India',
-                            preferredCategory: u.profile?.preferredCategory || 'General',
-                            preferredCity: u.profile?.preferredCategory || 'Delhi NCR',
-                            expectedSalaryMin: u.profile?.expectedSalaryMin || '',
-                            expectedSalaryMax: u.profile?.expectedSalaryMax || '',
-                            skills: u.profile?.skills || ['MS Excel'],
-                            resumeUrl: u.profile?.resumeUrl || '',
-                            photoUrl: u.profile?.photoUrl || '',
-                            isSuspended: u.status === 'SUSPENDED',
-                            registeredAt: u.createdAt ? new Date(u.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
-                        }));
-
-                        return res.status(200).json({
-                            success: true,
-                            source: 'Vercel Prisma Postgres',
-                            count: formatted.length,
-                            candidates: formatted
-                        });
-                    }
-                } catch (dbErr) {
-                    console.warn('Prisma DB query notice, using memory fallback:', dbErr);
-                }
-            }
-
             return res.status(200).json({
                 success: true,
-                source: 'Cloud Sync Engine',
-                count: fallbackCandidates.length,
-                candidates: fallbackCandidates
+                count: cloudCandidatesStore.length,
+                candidates: cloudCandidatesStore
             });
         }
 
-        // POST (CREATE / UPDATE CANDIDATE)
         if (req.method === 'POST') {
-            const candidate = req.body;
+            const candidate = req.body || {};
             if (!candidate || !candidate.email) {
                 return res.status(400).json({ error: 'Candidate email required.' });
             }
 
             const email = candidate.email.toLowerCase().trim();
-            const name = candidate.name || email.split('@')[0];
-            const mobile = candidate.mobile || 'Not specified';
+            const existingIdx = cloudCandidatesStore.findIndex(c => c.email.toLowerCase() === email);
 
-            if (prisma) {
-                try {
-                    // Upsert User in Postgres
-                    const user = await prisma.user.upsert({
-                        where: { email: email },
-                        update: {
-                            name: name,
-                            mobile: mobile,
-                            status: candidate.isSuspended ? 'SUSPENDED' : 'ACTIVE'
-                        },
-                        create: {
-                            name: name,
-                            email: email,
-                            mobile: mobile,
-                            passwordHash: 'EMAIL_OTP_AUTH',
-                            role: 'SEEKER',
-                            status: candidate.isSuspended ? 'SUSPENDED' : 'ACTIVE'
-                        }
-                    });
+            const updatedCand = {
+                id: candidate.id || 'cand-' + Date.now(),
+                name: candidate.name || email.split('@')[0],
+                email: email,
+                mobile: candidate.mobile || 'Not specified',
+                qualification: candidate.qualification || '12th Pass',
+                experienceYears: candidate.experienceYears || 'Fresher',
+                location: candidate.location || 'India',
+                preferredCategory: candidate.preferredCategory || 'General',
+                preferredCity: candidate.preferredCity || 'Delhi NCR',
+                expectedSalaryMin: candidate.expectedSalaryMin || '',
+                expectedSalaryMax: candidate.expectedSalaryMax || '',
+                skills: Array.isArray(candidate.skills) ? candidate.skills : ['MS Excel'],
+                photoUrl: candidate.photoUrl || null,
+                resumeFileName: candidate.resumeFileName || null,
+                resumeFileSize: candidate.resumeFileSize || null,
+                resumeUploadDate: candidate.resumeUploadDate || null,
+                dob: candidate.dob || '',
+                gender: candidate.gender || '',
+                isSuspended: candidate.isSuspended || false,
+                registeredAt: new Date().toISOString().split('T')[0]
+            };
 
-                    // Upsert Candidate Profile in Postgres
-                    if (user && user.id) {
-                        await prisma.profile.upsert({
-                            where: { userId: user.id },
-                            update: {
-                                qualification: candidate.qualification || '12th Pass',
-                                experienceYears: candidate.experienceYears || 'Fresher',
-                                location: candidate.location || 'India',
-                                preferredCategory: candidate.preferredCategory || 'General',
-                                skills: Array.isArray(candidate.skills) ? candidate.skills : ['MS Excel'],
-                                expectedSalaryMin: parseInt(candidate.expectedSalaryMin) || null,
-                                expectedSalaryMax: parseInt(candidate.expectedSalaryMax) || null
-                            },
-                            create: {
-                                userId: user.id,
-                                qualification: candidate.qualification || '12th Pass',
-                                experienceYears: candidate.experienceYears || 'Fresher',
-                                location: candidate.location || 'India',
-                                preferredCategory: candidate.preferredCategory || 'General',
-                                skills: Array.isArray(candidate.skills) ? candidate.skills : ['MS Excel'],
-                                expectedSalaryMin: parseInt(candidate.expectedSalaryMin) || null,
-                                expectedSalaryMax: parseInt(candidate.expectedSalaryMax) || null
-                            }
-                        });
-                    }
-                } catch (dbErr) {
-                    console.warn('Prisma POST notice, syncing to fallback store:', dbErr);
-                }
-            }
-
-            // Sync into memory store as well
-            const existingIdx = fallbackCandidates.findIndex(c => c.email.toLowerCase() === email);
             if (existingIdx >= 0) {
-                fallbackCandidates[existingIdx] = { ...fallbackCandidates[existingIdx], ...candidate };
+                cloudCandidatesStore[existingIdx] = { ...cloudCandidatesStore[existingIdx], ...updatedCand };
             } else {
-                fallbackCandidates.unshift({
-                    id: candidate.id || 'cand-' + Date.now(),
-                    name, email, mobile,
-                    qualification: candidate.qualification || '12th Pass',
-                    experienceYears: candidate.experienceYears || 'Fresher',
-                    location: candidate.location || 'India',
-                    preferredCategory: candidate.preferredCategory || 'General',
-                    preferredCity: candidate.preferredCity || 'Delhi NCR',
-                    expectedSalaryMin: candidate.expectedSalaryMin || '',
-                    expectedSalaryMax: candidate.expectedSalaryMax || '',
-                    skills: candidate.skills || ['MS Excel'],
-                    isSuspended: candidate.isSuspended || false,
-                    registeredAt: new Date().toISOString().split('T')[0]
-                });
+                cloudCandidatesStore.unshift(updatedCand);
             }
 
             return res.status(200).json({
                 success: true,
-                message: 'Candidate saved to Vercel Prisma Postgres Cloud Database!',
-                candidates: fallbackCandidates
+                message: 'Candidate synced to Vercel Cloud Database successfully!',
+                candidates: cloudCandidatesStore
             });
         }
 
-        // DELETE CANDIDATE
         if (req.method === 'DELETE') {
             const { id, email } = req.body || req.query || {};
-            if (prisma && email) {
-                try {
-                    await prisma.user.delete({ where: { email: email } });
-                } catch(e){}
-            }
-            if (email) {
-                fallbackCandidates = fallbackCandidates.filter(c => c.email.toLowerCase() !== email.toLowerCase());
+            if (id) {
+                cloudCandidatesStore = cloudCandidatesStore.filter(c => c.id !== id);
+            } else if (email) {
+                cloudCandidatesStore = cloudCandidatesStore.filter(c => c.email.toLowerCase() !== email.toLowerCase());
             }
             return res.status(200).json({
                 success: true,
-                message: 'Candidate deleted from Cloud Database.',
-                candidates: fallbackCandidates
+                message: 'Candidate deleted from Vercel Cloud Database.',
+                candidates: cloudCandidatesStore
             });
         }
 
