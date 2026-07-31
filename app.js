@@ -1,13 +1,8 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - 100% PRODUCTION CORE ENGINE
  * 
- * COMPLETE ADMIN PORTAL CONTROL CENTER:
- * 1. Dashboard Key Metrics & Audit Log System
- * 2. Manage Jobs with CSV Reports Export
- * 3. Manage Employers / Companies (Approve / Reject / Block)
- * 4. Manage Candidates with Account Suspend / Block Option
- * 5. Manage Applications with Status Management
- * 6. Broadcast Notifications & Support Inbox System
+ * DEDICATED ADMIN LEFT SIDEBAR CONTROL CENTER:
+ * Clean, uncluttered layout with professional Admin Sidebar
  */
 
 class RozgaarMitraApp {
@@ -335,6 +330,18 @@ class RozgaarMitraApp {
 
         this.currentView = pageId;
         document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active'));
+
+        const adminWrapper = document.getElementById('adminPortalWrapper');
+
+        if (adminPages.includes(pageId)) {
+            if (adminWrapper) adminWrapper.classList.remove('hidden');
+            document.querySelectorAll('.admin-sidebar-link').forEach(link => {
+                if (link.getAttribute('data-admin-page') === pageId) link.classList.add('active');
+                else link.classList.remove('active');
+            });
+        } else {
+            if (adminWrapper) adminWrapper.classList.add('hidden');
+        }
 
         const target = document.getElementById(`view-${pageId}`);
         if (target) target.classList.add('active');

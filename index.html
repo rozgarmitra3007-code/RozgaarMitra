@@ -92,23 +92,15 @@
                 <a href="#" class="nav-link active" data-page="home" onclick="app.navigateTo('home')" id="navHome"><i class="fa-solid fa-house"></i> Home</a>
                 <a href="#" class="nav-link" data-page="jobs" onclick="app.navigateTo('jobs')" id="navJobs"><i class="fa-solid fa-magnifying-glass"></i> Search Jobs</a>
                 
-                <!-- Candidate Nav Links (HIDDEN UNTIL LOGGED IN) -->
+                <!-- Candidate Nav Links -->
                 <a href="#" class="nav-link seeker-only hidden" data-page="profile" onclick="app.navigateTo('profile')" id="navProfile"><i class="fa-solid fa-user-pen"></i> My Profile</a>
                 <a href="#" class="nav-link seeker-only hidden" data-page="applications" onclick="app.navigateTo('applications')" id="navApps"><i class="fa-solid fa-paper-plane"></i> My Applications</a>
                 <a href="#" class="nav-link seeker-only hidden" data-page="saved" onclick="app.navigateTo('saved')" id="navSaved"><i class="fa-solid fa-bookmark"></i> Saved Jobs</a>
                 <a href="#" class="nav-link seeker-only hidden" data-page="notifications" onclick="app.navigateTo('notifications')" id="navNotifs"><i class="fa-solid fa-bell"></i> Notifications</a>
-                
-                <!-- Admin Only Nav Links -->
-                <a href="#" class="nav-link admin-only hidden" data-page="admin-dashboard" onclick="app.navigateTo('admin-dashboard')"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
-                <a href="#" class="nav-link admin-only hidden" data-page="admin-jobs" onclick="app.navigateTo('admin-jobs')"><i class="fa-solid fa-list-check"></i> Jobs</a>
-                <a href="#" class="nav-link admin-only hidden" data-page="admin-candidates" onclick="app.navigateTo('admin-candidates')"><i class="fa-solid fa-users"></i> Candidates</a>
-                <a href="#" class="nav-link admin-only hidden" data-page="admin-companies" onclick="app.navigateTo('admin-companies')"><i class="fa-solid fa-building"></i> Employers</a>
-                <a href="#" class="nav-link admin-only hidden" data-page="admin-reports" onclick="app.navigateTo('admin-reports')"><i class="fa-solid fa-file-csv"></i> Reports</a>
-                <a href="#" class="nav-link admin-only hidden" data-page="admin-audit" onclick="app.navigateTo('admin-audit')"><i class="fa-solid fa-shield-halved"></i> Audit Log</a>
             </nav>
 
             <div class="header-actions">
-                <button class="btn btn-primary btn-sm admin-only hidden" onclick="app.openNewJobModal()"><i class="fa-solid fa-plus"></i> Post Job</button>
+                <button class="btn btn-primary btn-sm admin-only hidden" onclick="app.navigateTo('admin-dashboard')"><i class="fa-solid fa-user-shield"></i> Admin Panel</button>
                 <button class="btn btn-outline btn-sm admin-only hidden" id="adminExitHeaderBtn" onclick="app.exitAdminMode()"><i class="fa-solid fa-right-from-bracket"></i> Exit Admin</button>
                 
                 <div class="auth-box" id="authBox">
@@ -581,210 +573,226 @@
         </section>
 
 
-        <!-- VIEW 8: ADMIN DASHBOARD -->
-        <section id="view-admin-dashboard" class="page-view">
-            <div class="page-header bg-dark text-white">
-                <div class="container flex-between">
-                    <div>
-                        <h1><i class="fa-solid fa-user-shield text-highlight"></i> Admin Consultant Panel</h1>
-                        <p>Rozgaar Mitra Private Job Consultancy Control Center</p>
+        <!-- UNIFIED ADMIN PORTAL WITH DEDICATED LEFT SIDEBAR -->
+        <div id="adminPortalWrapper" class="hidden">
+            <div class="admin-view-wrapper">
+                
+                <!-- DEDICATED LEFT SIDEBAR FOR ADMIN CONTROL CENTER -->
+                <aside class="admin-sidebar">
+                    <div class="admin-sidebar-header">
+                        <h3><i class="fa-solid fa-user-shield text-highlight"></i> Admin Control Center</h3>
+                        <small style="color:#94a3b8; font-size:0.78rem; display:block; margin-top:4px;">rozgarmitra3007@gmail.com</small>
                     </div>
-                    <div>
-                        <button class="btn btn-primary btn-sm mr-2" onclick="app.openNewJobModal()"><i class="fa-solid fa-plus"></i> Post Job</button>
-                        <button class="btn btn-outline btn-sm text-white" onclick="app.openBroadcastModal()"><i class="fa-solid fa-bullhorn"></i> Broadcast Alert</button>
+
+                    <nav class="admin-sidebar-nav">
+                        <a href="#" class="admin-sidebar-link" data-admin-page="admin-dashboard" onclick="app.navigateTo('admin-dashboard')">
+                            <i class="fa-solid fa-chart-line"></i> <span>Dashboard</span>
+                        </a>
+                        <a href="#" class="admin-sidebar-link" data-admin-page="admin-jobs" onclick="app.navigateTo('admin-jobs')">
+                            <i class="fa-solid fa-list-check"></i> <span>Manage Jobs</span>
+                        </a>
+                        <a href="#" class="admin-sidebar-link" data-admin-page="admin-candidates" onclick="app.navigateTo('admin-candidates')">
+                            <i class="fa-solid fa-users"></i> <span>Candidates</span>
+                        </a>
+                        <a href="#" class="admin-sidebar-link" data-admin-page="admin-companies" onclick="app.navigateTo('admin-companies')">
+                            <i class="fa-solid fa-building"></i> <span>Employers</span>
+                        </a>
+                        <a href="#" class="admin-sidebar-link" data-admin-page="admin-reports" onclick="app.navigateTo('admin-reports')">
+                            <i class="fa-solid fa-file-csv"></i> <span>CSV Reports</span>
+                        </a>
+                        <a href="#" class="admin-sidebar-link" data-admin-page="admin-audit" onclick="app.navigateTo('admin-audit')">
+                            <i class="fa-solid fa-shield-halved"></i> <span>Audit Log</span>
+                        </a>
+                    </nav>
+
+                    <div style="margin-top: auto; padding-top: 2rem; border-top: 1px solid #1e293b;">
+                        <button class="btn btn-outline btn-block text-white btn-sm" onclick="app.exitAdminMode()">
+                            <i class="fa-solid fa-right-from-bracket"></i> Exit Admin
+                        </button>
                     </div>
+                </aside>
+
+                <!-- ADMIN MAIN CONTENT CONTAINER -->
+                <div class="admin-content-area">
+
+                    <!-- VIEW 8: ADMIN DASHBOARD -->
+                    <section id="view-admin-dashboard" class="page-view p-4">
+                        <div class="flex-between mb-4">
+                            <div>
+                                <h1>Dashboard Overview</h1>
+                                <p class="text-secondary text-sm">Rozgaar Mitra Private Job Consultancy Control Center</p>
+                            </div>
+                            <div>
+                                <button class="btn btn-primary btn-sm mr-2" onclick="app.openNewJobModal()"><i class="fa-solid fa-plus"></i> Post Job</button>
+                                <button class="btn btn-outline btn-sm" onclick="app.openBroadcastModal()"><i class="fa-solid fa-bullhorn"></i> Broadcast Alert</button>
+                            </div>
+                        </div>
+
+                        <div class="form-grid mb-4">
+                            <div class="card p-4 text-center">
+                                <h2 id="admTotalJobs">0</h2>
+                                <span class="text-muted">Total Jobs</span>
+                            </div>
+                            <div class="card p-4 text-center">
+                                <h2 id="admTotalSeekers">0</h2>
+                                <span class="text-muted">Candidates</span>
+                            </div>
+                            <div class="card p-4 text-center">
+                                <h2 id="admTotalCompanies">0</h2>
+                                <span class="text-muted">Employers</span>
+                            </div>
+                            <div class="card p-4 text-center">
+                                <h2 id="admTotalApplications">0</h2>
+                                <span class="text-muted">Applications</span>
+                            </div>
+                        </div>
+
+                        <div class="card p-4 mb-4">
+                            <div class="flex-between mb-3 border-bottom pb-2">
+                                <h3>Recent Candidate Applications Received</h3>
+                                <button class="btn btn-outline btn-sm" onclick="app.exportApplicationsCSV()"><i class="fa-solid fa-file-csv text-success"></i> Export CSV</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Candidate</th>
+                                            <th>Job Title</th>
+                                            <th>Qualification</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admRecentAppsTable"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- VIEW 9: ADMIN MANAGE JOBS -->
+                    <section id="view-admin-jobs" class="page-view p-4">
+                        <div class="flex-between mb-4">
+                            <div>
+                                <h1>Manage & Edit Jobs</h1>
+                                <p class="text-secondary text-sm">Post, edit, delete, or mark jobs as "Vacancy Full / Hiring Closed"</p>
+                            </div>
+                            <div>
+                                <button class="btn btn-outline btn-sm mr-2" onclick="app.exportJobsCSV()"><i class="fa-solid fa-file-csv"></i> Export Jobs CSV</button>
+                                <button class="btn btn-primary btn-sm" onclick="app.openNewJobModal()"><i class="fa-solid fa-plus"></i> Post New Job</button>
+                            </div>
+                        </div>
+                        <div class="card p-0">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Title & Company</th>
+                                            <th>Category</th>
+                                            <th>City</th>
+                                            <th>Salary</th>
+                                            <th>Status</th>
+                                            <th>Admin Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminJobsTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- VIEW 10: ADMIN CANDIDATES -->
+                    <section id="view-admin-candidates" class="page-view p-4">
+                        <div class="flex-between mb-4">
+                            <div>
+                                <h1>Candidate Database Search</h1>
+                                <p class="text-secondary text-sm">Search talent pool by qualification, skills, and city</p>
+                            </div>
+                            <button class="btn btn-outline btn-sm" onclick="app.exportCandidatesCSV()"><i class="fa-solid fa-file-csv"></i> Export Candidates CSV</button>
+                        </div>
+                        <div id="candidateDatabaseContainer" class="jobs-grid"></div>
+                    </section>
+
+                    <!-- VIEW 11: ADMIN MANAGE COMPANIES / EMPLOYERS -->
+                    <section id="view-admin-companies" class="page-view p-4">
+                        <div class="flex-between mb-4">
+                            <div>
+                                <h1>Employer & Company Verification</h1>
+                                <p class="text-secondary text-sm">Approve, reject, or block employer company profiles</p>
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="app.openNewCompanyModal()"><i class="fa-solid fa-plus"></i> Add Employer</button>
+                        </div>
+                        <div class="card p-0">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Company Name</th>
+                                            <th>Industry</th>
+                                            <th>Location</th>
+                                            <th>Contact Email</th>
+                                            <th>Verification Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminCompaniesTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- VIEW 12: ADMIN CSV REPORTS & ANALYTICS -->
+                    <section id="view-admin-reports" class="page-view p-4">
+                        <div class="mb-4">
+                            <h1>Reports & CSV Exports</h1>
+                            <p class="text-secondary text-sm">Export database records into CSV spreadsheets for reporting</p>
+                        </div>
+                        <div class="form-grid mb-4">
+                            <div class="card p-4 text-center">
+                                <i class="fa-solid fa-users fa-2x text-primary mb-2"></i>
+                                <h3>Candidates Database</h3>
+                                <p class="text-sm text-muted mb-3">Download full list of candidates with contact details, skills, and experience</p>
+                                <button class="btn btn-primary btn-block" onclick="app.exportCandidatesCSV()"><i class="fa-solid fa-file-csv"></i> Export Candidates CSV</button>
+                            </div>
+                            <div class="card p-4 text-center">
+                                <i class="fa-solid fa-paper-plane fa-2x text-success mb-2"></i>
+                                <h3>Job Applications Log</h3>
+                                <p class="text-sm text-muted mb-3">Download candidate applications history with status and timestamps</p>
+                                <button class="btn btn-success btn-block" onclick="app.exportApplicationsCSV()"><i class="fa-solid fa-file-csv"></i> Export Applications CSV</button>
+                            </div>
+                            <div class="card p-4 text-center">
+                                <i class="fa-solid fa-briefcase fa-2x text-warning mb-2"></i>
+                                <h3>Job Vacancies Database</h3>
+                                <p class="text-sm text-muted mb-3">Download active & closed job listings with salary and category specs</p>
+                                <button class="btn btn-warning btn-block" onclick="app.exportJobsCSV()"><i class="fa-solid fa-file-csv"></i> Export Jobs CSV</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- VIEW 13: ADMIN ACTIVITY AUDIT LOG -->
+                    <section id="view-admin-audit" class="page-view p-4">
+                        <div class="mb-4">
+                            <h1>Admin Activity Audit Log</h1>
+                            <p class="text-secondary text-sm">Track all admin security actions, job changes, and candidate updates</p>
+                        </div>
+                        <div class="card p-0">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Timestamp</th>
+                                            <th>Admin Email</th>
+                                            <th>Action Type</th>
+                                            <th>Log Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminAuditLogTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </div>
-
-            <div class="container section-padding">
-                <div class="form-grid mb-4">
-                    <div class="card p-4 text-center">
-                        <h2 id="admTotalJobs">0</h2>
-                        <span class="text-muted">Total Jobs</span>
-                    </div>
-                    <div class="card p-4 text-center">
-                        <h2 id="admTotalSeekers">0</h2>
-                        <span class="text-muted">Candidates</span>
-                    </div>
-                    <div class="card p-4 text-center">
-                        <h2 id="admTotalCompanies">0</h2>
-                        <span class="text-muted">Employers</span>
-                    </div>
-                    <div class="card p-4 text-center">
-                        <h2 id="admTotalApplications">0</h2>
-                        <span class="text-muted">Applications</span>
-                    </div>
-                </div>
-
-                <div class="card p-4 mb-4">
-                    <div class="flex-between mb-3 border-bottom pb-2">
-                        <h3>Recent Candidate Applications Received</h3>
-                        <button class="btn btn-outline btn-sm" onclick="app.exportApplicationsCSV()"><i class="fa-solid fa-file-csv text-success"></i> Export CSV</button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Candidate</th>
-                                    <th>Job Title</th>
-                                    <th>Qualification</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admRecentAppsTable"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-
-        <!-- VIEW 9: ADMIN MANAGE JOBS -->
-        <section id="view-admin-jobs" class="page-view">
-            <div class="page-header bg-dark text-white">
-                <div class="container flex-between">
-                    <div>
-                        <h1>Manage & Edit Jobs</h1>
-                        <p>Post, edit, delete, or mark jobs as "Vacancy Full / Hiring Closed"</p>
-                    </div>
-                    <div>
-                        <button class="btn btn-outline btn-sm text-white mr-2" onclick="app.exportJobsCSV()"><i class="fa-solid fa-file-csv"></i> Export Jobs CSV</button>
-                        <button class="btn btn-primary btn-sm" onclick="app.openNewJobModal()"><i class="fa-solid fa-plus"></i> Post New Job</button>
-                    </div>
-                </div>
-            </div>
-            <div class="container section-padding">
-                <div class="card p-0">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Title & Company</th>
-                                    <th>Category</th>
-                                    <th>City</th>
-                                    <th>Salary</th>
-                                    <th>Status</th>
-                                    <th>Admin Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminJobsTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-
-        <!-- VIEW 10: ADMIN CANDIDATES -->
-        <section id="view-admin-candidates" class="page-view">
-            <div class="page-header bg-dark text-white">
-                <div class="container flex-between">
-                    <div>
-                        <h1>Candidate Database Search</h1>
-                        <p>Search talent pool by qualification, skills, and city</p>
-                    </div>
-                    <button class="btn btn-outline btn-sm text-white" onclick="app.exportCandidatesCSV()"><i class="fa-solid fa-file-csv"></i> Export Candidates CSV</button>
-                </div>
-            </div>
-            <div class="container section-padding">
-                <div id="candidateDatabaseContainer" class="jobs-grid"></div>
-            </div>
-        </section>
-
-
-        <!-- VIEW 11: ADMIN MANAGE COMPANIES / EMPLOYERS -->
-        <section id="view-admin-companies" class="page-view">
-            <div class="page-header bg-dark text-white">
-                <div class="container flex-between">
-                    <div>
-                        <h1>Employer & Company Verification</h1>
-                        <p>Approve, reject, or block employer company profiles</p>
-                    </div>
-                    <button class="btn btn-primary btn-sm" onclick="app.openNewCompanyModal()"><i class="fa-solid fa-plus"></i> Add Employer</button>
-                </div>
-            </div>
-            <div class="container section-padding">
-                <div class="card p-0">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Company Name</th>
-                                    <th>Industry</th>
-                                    <th>Location</th>
-                                    <th>Contact Email</th>
-                                    <th>Verification Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminCompaniesTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-
-        <!-- VIEW 12: ADMIN CSV REPORTS & ANALYTICS -->
-        <section id="view-admin-reports" class="page-view">
-            <div class="page-header bg-dark text-white">
-                <div class="container">
-                    <h1>Reports & CSV Exports</h1>
-                    <p>Export database records into CSV spreadsheets for reporting</p>
-                </div>
-            </div>
-            <div class="container section-padding">
-                <div class="form-grid mb-4">
-                    <div class="card p-4 text-center">
-                        <i class="fa-solid fa-users fa-2x text-primary mb-2"></i>
-                        <h3>Candidates Database</h3>
-                        <p class="text-sm text-muted mb-3">Download full list of candidates with contact details, skills, and experience</p>
-                        <button class="btn btn-primary btn-block" onclick="app.exportCandidatesCSV()"><i class="fa-solid fa-file-csv"></i> Export Candidates CSV</button>
-                    </div>
-                    <div class="card p-4 text-center">
-                        <i class="fa-solid fa-paper-plane fa-2x text-success mb-2"></i>
-                        <h3>Job Applications Log</h3>
-                        <p class="text-sm text-muted mb-3">Download candidate applications history with status and timestamps</p>
-                        <button class="btn btn-success btn-block" onclick="app.exportApplicationsCSV()"><i class="fa-solid fa-file-csv"></i> Export Applications CSV</button>
-                    </div>
-                    <div class="card p-4 text-center">
-                        <i class="fa-solid fa-briefcase fa-2x text-warning mb-2"></i>
-                        <h3>Job Vacancies Database</h3>
-                        <p class="text-sm text-muted mb-3">Download active & closed job listings with salary and category specs</p>
-                        <button class="btn btn-warning btn-block" onclick="app.exportJobsCSV()"><i class="fa-solid fa-file-csv"></i> Export Jobs CSV</button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-
-        <!-- VIEW 13: ADMIN ACTIVITY AUDIT LOG -->
-        <section id="view-admin-audit" class="page-view">
-            <div class="page-header bg-dark text-white">
-                <div class="container">
-                    <h1>Admin Activity Audit Log</h1>
-                    <p>Track all admin security actions, job changes, and candidate updates</p>
-                </div>
-            </div>
-            <div class="container section-padding">
-                <div class="card p-0">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Timestamp</th>
-                                    <th>Admin Email</th>
-                                    <th>Action Type</th>
-                                    <th>Log Details</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminAuditLogTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
+        </div>
 
 
         <!-- LEGAL VIEW 1: PRIVACY POLICY -->
