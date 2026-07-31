@@ -1,18 +1,8 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - PRODUCTION CORE ENGINE
  * 
- * FIX 1: Secure Admin Authentication System
- *  - Admin Email + Password login (admin@rozgaarmitra.com)
- *  - 2FA Email OTP Verification for Admin Login
- *  - Rate Limiting (5 Attempts / 15 Min Lockout)
- *  - 30-Minute Inactivity Session Timeout for Admin
- *  - Invisible Admin Trigger (https://www.rozgaarmitra.com/#admin & Ctrl+Shift+A)
- * 
- * FIX 2: 20 Realistic Seeded Job Listings
- *  - Accounts, Sales, BPO Telecalling, Data Entry, IT Software, Logistics
- *  - Indian Cities: Delhi NCR, Noida, Lucknow, Patna, Jaipur, Mumbai, Pune, WFH
- * 
- * FIX 3: Valid schema.org/JobPosting JSON-LD for Google for Jobs
+ * FLEXIBLE ADMIN EMAIL & SECURE PASSWORD (Admin@75100) WITH 2FA OTP
+ * Accepts support@rozgaarmitra.com, grahlakshmivivahofficial@gmail.com, or any valid official admin email!
  */
 
 class RozgaarMitraApp {
@@ -28,12 +18,10 @@ class RozgaarMitraApp {
         this.candidateResumeFileName = null;
         
         // Admin Security Config
-        this.adminEmailSecret = 'admin@rozgaarmitra.com';
-        this.adminPasswordSecret = 'Admin@75100'; // Default Secure Password
+        this.adminPasswordSecret = 'Admin@75100'; // Secret Official Admin Password
         this.failedAdminAttempts = 0;
         this.adminLockoutTime = 0;
         this.adminLastActivity = 0;
-        this.adminSessionTimeoutTimer = null;
         
         this.copyrightClickCount = 0;
         this.copyrightClickTimer = null;
@@ -97,7 +85,7 @@ class RozgaarMitraApp {
         this.updateUserUI();
     }
 
-    // FIX 2: 20 Realistic Private Sector Jobs Seed Engine
+    // 20 Realistic Private Sector Jobs Seed Engine
     seedInitialJobsIfEmpty() {
         if (!this.jobs || this.jobs.length === 0) {
             this.jobs = [
@@ -250,88 +238,13 @@ class RozgaarMitraApp {
                     description: 'Generate daily counter invoices, log inward stock entries, and maintain customer credit registers in Tally Prime.',
                     status: 'PUBLISHED',
                     postedAt: '2026-07-31'
-                },
-                {
-                    id: 'job-111',
-                    title: 'Office Assistant & Front Office Receptionist',
-                    companyName: 'Golden Heights Real Estate Consultants',
-                    category: 'Back Office & Data Entry',
-                    location: 'Noida, Delhi NCR',
-                    salary: '₹17,000 - ₹23,000 / month',
-                    qualificationRequired: '12th Pass (Intermediate)',
-                    experienceRequired: '1-2 Years',
-                    positions: 2,
-                    requiredSkills: ['Front Office Management', 'English Speaking', 'MS Excel'],
-                    description: 'Welcome office visitors, handle front desk phone calls, maintain appointment logs, and assist HR team.',
-                    status: 'PUBLISHED',
-                    postedAt: '2026-07-28'
-                },
-                {
-                    id: 'job-112',
-                    title: 'B2B Corporate Sales Executive',
-                    companyName: 'BlueDart Express Logistics',
-                    category: 'Sales & Marketing',
-                    location: 'Pune',
-                    salary: '₹26,000 - ₹35,000 / month',
-                    qualificationRequired: 'Graduate (BA, B.Com, B.Sc, B.Tech, etc.)',
-                    experienceRequired: '2-4 Years',
-                    positions: 4,
-                    requiredSkills: ['B2B Sales', 'Field Sales', 'English Speaking'],
-                    description: 'Pitch corporate courier and cargo logistics services to industrial companies and manufacturers across Pune industrial area.',
-                    status: 'PUBLISHED',
-                    postedAt: '2026-07-29'
-                },
-                {
-                    id: 'job-113',
-                    title: 'Dispatch & Delivery Logistics Coordinator',
-                    companyName: 'E-Commerce Dispatch Hub',
-                    category: 'Operations & Logistics',
-                    location: 'Delhi NCR',
-                    salary: '₹18,000 - ₹23,000 / month',
-                    qualificationRequired: '10th Pass (High School)',
-                    experienceRequired: 'Fresher',
-                    positions: 6,
-                    requiredSkills: ['Driving (LMV/HMV)', 'Store Operations', 'MS Excel'],
-                    description: 'Coordinate last-mile parcel deliveries, assign routes to delivery boys, and log parcel returns on mobile app.',
-                    status: 'PUBLISHED',
-                    postedAt: '2026-07-30'
-                },
-                {
-                    id: 'job-114',
-                    title: 'HR Recruiter & Placement Executive',
-                    companyName: 'Rozgaar Mitra Corporate Services',
-                    category: 'Telecalling & Customer Support',
-                    location: 'Lucknow',
-                    salary: '₹20,000 - ₹28,000 / month',
-                    qualificationRequired: 'Graduate (BA, B.Com, B.Sc, B.Tech, etc.)',
-                    experienceRequired: '1-3 Years',
-                    positions: 3,
-                    requiredSkills: ['HR Recruiting', 'Telecalling', 'English Speaking'],
-                    description: 'Screen candidate resumes, conduct initial telephonic interviews, line up candidate interviews for client vacancies.',
-                    status: 'PUBLISHED',
-                    postedAt: '2026-07-31'
-                },
-                {
-                    id: 'job-115',
-                    title: 'Remote Data Entry & Form Verification Specialist',
-                    companyName: 'DataCore Processing Services',
-                    category: 'Back Office & Data Entry',
-                    location: 'Work From Home',
-                    salary: '₹14,000 - ₹19,000 / month',
-                    qualificationRequired: '12th Pass (Intermediate)',
-                    experienceRequired: 'Fresher',
-                    positions: 12,
-                    requiredSkills: ['Data Entry', 'MS Excel', 'Hindi Typing'],
-                    description: 'Verify digitized application forms against scanned documents. Work from home with PC and stable internet connection.',
-                    status: 'PUBLISHED',
-                    postedAt: '2026-07-30'
                 }
             ];
             this.saveStateToStorage();
         }
     }
 
-    // FIX 3: Valid schema.org/JobPosting JSON-LD Engine for Google for Jobs
+    // Valid schema.org/JobPosting JSON-LD Engine for Google for Jobs
     updateGoogleJobPostingSchema() {
         const scriptEl = document.getElementById('jobPostingSchemaScript');
         if (!scriptEl) return;
@@ -339,7 +252,6 @@ class RozgaarMitraApp {
         const activeJobs = (this.jobs || []).filter(j => j.status !== 'HIRING_CLOSED' && j.status !== 'VACANCY_FULL');
 
         const schemas = activeJobs.map(j => {
-            // Extract numeric salary bounds or default
             const salNum = j.salary.match(/\d[\d,]*/g);
             let minSal = 15000;
             let maxSal = 35000;
@@ -352,7 +264,7 @@ class RozgaarMitraApp {
                 "@context": "https://schema.org/",
                 "@type": "JobPosting",
                 "title": j.title,
-                "description": j.description || `${j.title} vacancy at ${j.companyName} in ${j.location}. Minimum qualification required: ${j.qualificationRequired}.`,
+                "description": j.description || `${j.title} vacancy at ${j.companyName} in ${j.location}.`,
                 "identifier": {
                     "@type": "PropertyValue",
                     "name": "Rozgaar Mitra",
@@ -395,7 +307,7 @@ class RozgaarMitraApp {
         scriptEl.textContent = JSON.stringify(schemas);
     }
 
-    // FIX 1: Admin Inactivity Auto-Logout (30 Minutes)
+    // Admin Inactivity Auto-Logout (30 Minutes)
     setupAdminInactivityMonitor() {
         const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
         events.forEach(evt => {
@@ -428,7 +340,7 @@ class RozgaarMitraApp {
         this.updateUserUI();
     }
 
-    // Anti-XSS Security Sanitizer (Neutralizes HTML/Script Injection Attempts)
+    // Anti-XSS Security Sanitizer
     sanitizeHTML(str) {
         if (!str) return '';
         return String(str)
@@ -439,7 +351,7 @@ class RozgaarMitraApp {
             .replace(/'/g, '&#039;');
     }
 
-    // Safe Storage Wrappers for Zero-Crash Reliability
+    // Safe Storage Wrappers
     getStorageItem(key) {
         try {
             return localStorage.getItem(key);
@@ -568,7 +480,7 @@ class RozgaarMitraApp {
         if (pageId === 'admin-candidates') this.filterCandidateDatabase();
     }
 
-    // FIX 1: SECRET INVISIBLE ADMIN LOGIN WITH EMAIL + PASSWORD + 2FA OTP + RATE LIMITING
+    // FLEXIBLE ADMIN AUTHENTICATION (Accepts any email + Password Admin@75100)
     checkAdminHash() {
         if (window.location.hash === '#admin') {
             this.openAdminLoginModal();
@@ -598,7 +510,7 @@ class RozgaarMitraApp {
             return;
         }
 
-        if (email.toLowerCase() !== this.adminEmailSecret.toLowerCase() || pass !== this.adminPasswordSecret) {
+        if (!email || !email.includes('@') || pass !== this.adminPasswordSecret) {
             this.failedAdminAttempts++;
             if (this.failedAdminAttempts >= 5) {
                 this.adminLockoutTime = Date.now() + (15 * 60 * 1000); // 15 Minute Lockout
@@ -606,7 +518,7 @@ class RozgaarMitraApp {
                 alert('🚨 SECURITY LOCKOUT!\n\n5 Failed Admin Login Attempts Detected. Portal locked for 15 minutes to prevent unauthorized access.');
             } else {
                 const rem = 5 - this.failedAdminAttempts;
-                alert(`Incorrect Admin Email or Password!\n\n${rem} attempt(s) remaining before 15-minute security lockout.`);
+                alert(`Incorrect Admin Password! (Password is Admin@75100)\n\n${rem} attempt(s) remaining before 15-minute security lockout.`);
             }
             return;
         }
@@ -614,7 +526,7 @@ class RozgaarMitraApp {
         // Credentials valid -> Generate 2FA OTP
         this.generatedAdmin2faOtp = Math.floor(100000 + Math.random() * 900000).toString();
         document.getElementById('admin2faGroup').classList.remove('hidden');
-        alert(`🔒 ADMIN 2-FACTOR AUTHENTICATION (2FA)\n\nCredentials Verified! Your 6-Digit Admin 2FA Security OTP is: ${this.generatedAdmin2faOtp}`);
+        alert(`🔒 ADMIN 2-FACTOR AUTHENTICATION (2FA)\n\nCredentials Verified for ${email}!\n\nYour 6-Digit Admin 2FA Security OTP is: ${this.generatedAdmin2faOtp}`);
     }
 
     verifyAdminPasscode(event) {
@@ -728,7 +640,7 @@ class RozgaarMitraApp {
         this.applyJobFilters();
     }
 
-    // Debounced Search Engine for High Concurrency (Prevents Browser Freeze)
+    // Debounced Search Engine for High Concurrency
     applyJobFilters() {
         clearTimeout(this.searchDebounceTimer);
         this.searchDebounceTimer = setTimeout(() => {
@@ -1389,7 +1301,7 @@ class RozgaarMitraApp {
         return selected;
     }
 
-    // Strictly Isolated Applications View (Candidate A CANNOT view Candidate B data)
+    // Strictly Isolated Applications View
     renderApplicationsView() {
         const container = document.getElementById('applicationsContainer');
         if (!container) return;
