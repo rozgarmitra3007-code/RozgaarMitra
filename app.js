@@ -1,7 +1,7 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - 100% PRODUCTION CORE ENGINE
  * 
- * CANDIDATE DATABASE & APPLICATIONS SELF-HEALING AUTO-SYNC ENGINE
+ * CLEAN DATA & REAL-TIME ADMIN PORTAL SYNCHRONIZATION ENGINE
  */
 
 class RozgaarMitraApp {
@@ -58,7 +58,7 @@ class RozgaarMitraApp {
     init() {
         this.loadStateFromStorage();
         this.purgeInitialSeedJobs();
-        this.syncApplicantsIntoCandidateDatabase();
+        this.purgeDummyTestingCandidates();
         this.setupTheme();
         this.renderCategoryCards();
         this.renderFeaturedJobs();
@@ -108,37 +108,23 @@ class RozgaarMitraApp {
         this.updateUserUI();
     }
 
-    // SELF-HEALING SYNC: Ensure EVERY candidate in applications exists in candidate database
-    syncApplicantsIntoCandidateDatabase() {
-        if (!this.applications) this.applications = [];
-        if (!this.candidates) this.candidates = [];
+    // PURGE ANY DUMMY / SAMPLE TEST CANDIDATES & APPLICATIONS FROM EARLY TESTING
+    purgeDummyTestingCandidates() {
+        let changed = false;
+        if (this.candidates && this.candidates.length > 0) {
+            const initialCount = this.candidates.length;
+            // Filter out candidates with dummy test mobile "+91 9876543210" or dummy auto-created entries
+            this.candidates = this.candidates.filter(c => c.mobile !== '+91 9876543210' && c.name !== 'krtanuj007');
+            if (this.candidates.length !== initialCount) changed = true;
+        }
 
-        let stateChanged = false;
+        if (this.applications && this.applications.length > 0) {
+            const initialAppCount = this.applications.length;
+            this.applications = this.applications.filter(a => a.candidateMobile !== '+91 9876543210' && a.candidateName !== 'krtanuj007');
+            if (this.applications.length !== initialAppCount) changed = true;
+        }
 
-        this.applications.forEach(app => {
-            if (app.candidateEmail) {
-                const existing = this.candidates.find(c => c.email.toLowerCase() === app.candidateEmail.toLowerCase());
-                if (!existing) {
-                    const newCand = {
-                        id: app.userId || 'cand-' + Date.now(),
-                        name: app.candidateName || app.candidateEmail.split('@')[0],
-                        email: app.candidateEmail.toLowerCase(),
-                        mobile: app.candidateMobile || '+91 9876543210',
-                        qualification: app.candidateQual || '12th Pass',
-                        role: 'SEEKER',
-                        skills: ['Customer Support', 'MS Excel'],
-                        isSuspended: false,
-                        location: 'India',
-                        preferredCategory: 'General',
-                        preferredCity: 'Delhi NCR'
-                    };
-                    this.candidates.push(newCand);
-                    stateChanged = true;
-                }
-            }
-        });
-
-        if (stateChanged) {
+        if (changed) {
             this.saveStateToStorage();
         }
     }
@@ -146,7 +132,6 @@ class RozgaarMitraApp {
     setupRealtimeSyncListeners() {
         window.addEventListener('storage', (e) => {
             this.loadStateFromStorage();
-            this.syncApplicantsIntoCandidateDatabase();
             this.updateStatsCounters();
             if (this.currentRole === 'ADMIN') {
                 if (this.currentView === 'admin-candidates') this.filterCandidateDatabase();
@@ -161,7 +146,6 @@ class RozgaarMitraApp {
                 const data = event.data;
                 if (data && (data.type === 'CANDIDATE_REGISTERED' || data.type === 'APPLICATION_SUBMITTED')) {
                     this.loadStateFromStorage();
-                    this.syncApplicantsIntoCandidateDatabase();
                     this.updateStatsCounters();
                     if (this.currentRole === 'ADMIN') {
                         if (this.currentView === 'admin-candidates') this.filterCandidateDatabase();
@@ -845,7 +829,7 @@ class RozgaarMitraApp {
             userId: this.currentUser.id,
             candidateName: this.currentUser.name,
             candidateEmail: this.currentUser.email,
-            candidateMobile: this.currentUser.mobile || '+91 9876543210',
+            candidateMobile: this.currentUser.mobile || 'Not specified',
             candidateQual: this.currentUser.qualification || '12th Pass',
             appliedAt: new Date().toISOString().split('T')[0],
             status: 'Applied'
@@ -862,7 +846,6 @@ class RozgaarMitraApp {
             createdAt: new Date().toISOString().split('T')[0]
         });
 
-        this.syncApplicantsIntoCandidateDatabase();
         this.saveStateToStorage();
         this.notifyRealtimeEvent('APPLICATION_SUBMITTED', newApp);
         alert(`Application for "${job.title}" successfully submitted!`);
@@ -1048,8 +1031,10 @@ class RozgaarMitraApp {
 
         if (confirm(`Are you sure you want to permanently delete candidate profile for "${cand.name}" (${cand.email})?`)) {
             this.candidates = this.candidates.filter(c => c.id !== candId);
+            this.applications = this.applications.filter(a => a.candidateEmail !== cand.email);
             this.saveStateToStorage();
             this.filterCandidateDatabase();
+            this.renderAdminDashboard();
             this.logAdminAction('DELETE_CANDIDATE', `Permanently deleted candidate profile ${cand.email}`);
             alert(`Candidate "${cand.name}" deleted permanently.`);
         }
@@ -1070,7 +1055,6 @@ class RozgaarMitraApp {
     // FULL DETAILED CANDIDATE DATABASE FILTER & RENDER FOR ADMIN
     filterCandidateDatabase() {
         if (this.currentRole !== 'ADMIN') return;
-        this.syncApplicantsIntoCandidateDatabase();
         const container = document.getElementById('candidateDatabaseContainer');
         if (!container) return;
 
@@ -1519,7 +1503,7 @@ class RozgaarMitraApp {
 
         let u = this.candidates.find(c => c.email.toLowerCase() === email.toLowerCase());
         if (!u) {
-            u = { id: 'cand-' + Date.now(), name: email.split('@')[0], email: email.toLowerCase(), mobile: '+91 9876543210', qualification: '12th Pass', role: 'SEEKER', skills: ['Tally Prime', 'MS Excel'] };
+            u = { id: 'cand-' + Date.now(), name: email.split('@')[0], email: email.toLowerCase(), mobile: 'Pending Mobile', qualification: '12th Pass', role: 'SEEKER', skills: ['Tally Prime', 'MS Excel'] };
             this.candidates.push(u);
         }
 
@@ -1900,7 +1884,6 @@ class RozgaarMitraApp {
 
     renderAdminDashboard() {
         if (this.currentRole !== 'ADMIN') return;
-        this.syncApplicantsIntoCandidateDatabase();
         this.updateStatsCounters();
         const tbody = document.getElementById('admRecentAppsTable');
         if (!tbody) return;
