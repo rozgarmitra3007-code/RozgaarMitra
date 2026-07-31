@@ -66,7 +66,7 @@
                 <button class="btn btn-outline btn-sm admin-only hidden" id="adminExitHeaderBtn" onclick="app.exitAdminMode()"><i class="fa-solid fa-right-from-bracket"></i> Exit Admin</button>
                 
                 <div class="auth-box" id="authBox">
-                    <button class="btn btn-outline btn-sm" onclick="app.openAuthModal('login')"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+                    <button class="btn btn-outline btn-sm" onclick="app.openAuthModal('email-otp')"><i class="fa-solid fa-envelope"></i> Email OTP Login</button>
                     <button class="btn btn-primary btn-sm" onclick="app.openAuthModal('register')"><i class="fa-solid fa-user-plus"></i> Register</button>
                 </div>
 
@@ -664,28 +664,33 @@
         </a>
     </nav>
 
-    <!-- Auth Modal (Candidates) -->
+    <!-- Auth Modal (Candidates with Email OTP & Mobile OTP tabs) -->
     <div class="modal-backdrop hidden" id="authModal">
         <div class="modal-card">
             <button class="modal-close" onclick="app.closeModal('authModal')"><i class="fa-solid fa-xmark"></i></button>
             <div class="auth-tabs">
-                <button class="auth-tab active" id="tabLoginEmail" onclick="app.switchAuthTab('email')">Email Login</button>
-                <button class="auth-tab" id="tabLoginOtp" onclick="app.switchAuthTab('otp')">Mobile OTP</button>
-                <button class="auth-tab" id="tabRegister" onclick="app.switchAuthTab('register')">Register</button>
+                <button class="auth-tab active" id="tabLoginEmailOtp" onclick="app.switchAuthTab('email-otp')"><i class="fa-solid fa-envelope"></i> Email OTP</button>
+                <button class="auth-tab" id="tabLoginOtp" onclick="app.switchAuthTab('otp')"><i class="fa-solid fa-mobile-screen"></i> Mobile OTP</button>
+                <button class="auth-tab" id="tabRegister" onclick="app.switchAuthTab('register')"><i class="fa-solid fa-user-plus"></i> Register</button>
             </div>
 
-            <form id="formEmailLogin" onsubmit="app.handleLogin(event)">
+            <!-- EMAIL OTP VERIFICATION FORM -->
+            <form id="formEmailOtpLogin" onsubmit="app.handleEmailOtpLogin(event)">
                 <div class="mb-3">
-                    <label class="text-sm font-weight-bold">Email Address</label>
-                    <input type="email" id="loginEmail" class="form-control" required placeholder="Enter email address">
+                    <label class="text-sm font-weight-bold">Email Address *</label>
+                    <div style="display:flex; gap:0.5rem;">
+                        <input type="email" id="otpEmailInput" class="form-control" placeholder="Enter candidate email address" required>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="app.sendEmailOtpCode()"><i class="fa-solid fa-paper-plane"></i> Get Email OTP</button>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="text-sm font-weight-bold">Password</label>
-                    <input type="password" id="loginPassword" class="form-control" required placeholder="••••••••">
+                <div class="mb-3 hidden" id="otpEmailCodeGroup">
+                    <label class="text-sm font-weight-bold">Enter 6-Digit Email Verification OTP *</label>
+                    <input type="text" id="otpEmailCode" class="form-control" placeholder="Enter 6-digit Email OTP" maxlength="6">
                 </div>
-                <button type="submit" class="btn btn-primary btn-block">Login to Account</button>
+                <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-shield-check"></i> Verify Email OTP & Login</button>
             </form>
 
+            <!-- MOBILE OTP FORM -->
             <form id="formOtpLogin" class="hidden" onsubmit="app.handleOtpLogin(event)">
                 <div class="mb-3">
                     <label class="text-sm font-weight-bold">Mobile Number (+91)</label>
@@ -701,6 +706,7 @@
                 <button type="submit" class="btn btn-primary btn-block">Verify OTP & Login</button>
             </form>
 
+            <!-- REGISTER FORM -->
             <form id="formRegister" class="hidden" onsubmit="app.handleRegister(event)">
                 <div class="mb-3">
                     <label class="text-sm font-weight-bold">Full Name</label>

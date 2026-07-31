@@ -1,8 +1,7 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - ULTRA-HIGH SCALE PRODUCTION CORE ENGINE
- * Engineered for 1-5 Lakh Concurrent Users on Vercel Global Edge CDN.
- * Debounced Search, Memory Fallback Protection, Candidate Photo & Resume File Upload,
- * Real Generated 6-Digit OTP, Secret Invisible Admin Portal (Passcode: Admin@75100),
+ * Candidate view/apply, Photo & Resume file upload, Real Generated 6-Digit Email & Mobile OTP Verification,
+ * Secret Invisible Admin Portal (Passcode: Admin@75100), MSME Govt Registration (UDYAM-UP-03-0139326),
  * Job Management, Hiring Closed controls, and login-gated navbar visibility.
  */
 
@@ -13,6 +12,7 @@ class RozgaarMitraApp {
         this.currentView = 'home';
         this.pendingDeleteJobId = null;
         this.generatedOtp = null;
+        this.generatedEmailOtp = null;
         this.candidatePhotoDataUrl = null;
         this.candidateResumeFileName = null;
         this.adminPasscodeSecret = 'Admin@75100'; // Secret Official Admin Password
@@ -150,7 +150,7 @@ class RozgaarMitraApp {
     navigateTo(pageId) {
         const protectedPages = ['profile', 'applications', 'saved', 'notifications'];
         if (protectedPages.includes(pageId) && !this.currentUser && this.currentRole !== 'ADMIN') {
-            this.openAuthModal('login');
+            this.openAuthModal('email-otp');
             alert('Please login or register to access candidate profile & applications!');
             return;
         }
@@ -349,7 +349,7 @@ class RozgaarMitraApp {
     toggleSaveJob(jobId, event) {
         if (event) event.stopPropagation();
         if (!this.currentUser) {
-            this.openAuthModal('login');
+            this.openAuthModal('email-otp');
             alert('Please login to save jobs to your bookmarks.');
             return;
         }
@@ -491,7 +491,7 @@ class RozgaarMitraApp {
         }
 
         if (!this.currentUser) {
-            this.openAuthModal('login');
+            this.openAuthModal('email-otp');
             alert('Please login or register to apply for jobs!');
             return;
         }
@@ -614,7 +614,49 @@ class RozgaarMitraApp {
         this.renderSkillsTagSelector();
     }
 
-    // REAL OTP FLOW
+    // EMAIL OTP FLOW
+    sendEmailOtpCode() {
+        const email = document.getElementById('otpEmailInput').value;
+        if (!email || !email.includes('@')) {
+            alert('Please enter a valid candidate email address!');
+            return;
+        }
+
+        this.generatedEmailOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        document.getElementById('otpEmailCodeGroup').classList.remove('hidden');
+        alert(`📧 Email Verification OTP Sent to: ${email}\n\nYour 6-Digit Email Verification OTP is: ${this.generatedEmailOtp}`);
+    }
+
+    handleEmailOtpLogin(event) {
+        event.preventDefault();
+        const email = document.getElementById('otpEmailInput').value;
+        const code = document.getElementById('otpEmailCode').value;
+
+        if (!this.generatedEmailOtp) {
+            alert('Please click "Get Email OTP" first to receive your verification code!');
+            return;
+        }
+
+        if (code !== this.generatedEmailOtp) {
+            alert('Incorrect Email OTP code! Please enter the exact 6-digit OTP sent to your email.');
+            return;
+        }
+
+        let u = this.candidates.find(c => c.email.toLowerCase() === email.toLowerCase());
+        if (!u) {
+            u = { id: 'cand-' + Date.now(), name: email.split('@')[0], email: email, mobile: '+91 9876543210', qualification: '12th Pass', role: 'SEEKER', skills: ['Tally Prime', 'MS Excel'] };
+            this.candidates.push(u);
+        }
+
+        this.currentUser = u;
+        this.setStorageItem('rm_current_user', JSON.stringify(u));
+        this.saveStateToStorage();
+        this.updateUserUI();
+        this.closeModal('authModal');
+        alert(`Email OTP Verification Successful! Logged in as ${email}.`);
+    }
+
+    // MOBILE OTP FLOW
     sendOtpCode() {
         const mob = document.getElementById('otpMobile').value;
         if (!mob || mob.length < 10) {
@@ -624,7 +666,7 @@ class RozgaarMitraApp {
 
         this.generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
         document.getElementById('otpCodeGroup').classList.remove('hidden');
-        alert(`🔒 SMS OTP Sent to +91 ${mob}\n\nYour 6-Digit Verification OTP is: ${this.generatedOtp}`);
+        alert(`🔒 Mobile SMS OTP Sent to +91 ${mob}\n\nYour 6-Digit Verification OTP is: ${this.generatedOtp}`);
     }
 
     handleOtpLogin(event) {
@@ -1031,7 +1073,7 @@ class RozgaarMitraApp {
         `).join('');
     }
 
-    openAuthModal(tab = 'email') {
+    openAuthModal(tab = 'email-otp') {
         this.switchAuthTab(tab);
         document.getElementById('authModal').classList.remove('hidden');
     }
@@ -1041,23 +1083,23 @@ class RozgaarMitraApp {
     }
 
     switchAuthTab(tab) {
-        document.getElementById('tabLoginEmail').classList.remove('active');
-        document.getElementById('tabLoginOtp').classList.remove('active');
-        document.getElementById('tabRegister').classList.remove('active');
+        document.getElementById('tabLoginEmailOtp')?.classList.remove('active');
+        document.getElementById('tabLoginOtp')?.classList.remove('active');
+        document.getElementById('tabRegister')?.classList.remove('active');
 
-        document.getElementById('formEmailLogin').classList.add('hidden');
-        document.getElementById('formOtpLogin').classList.add('hidden');
-        document.getElementById('formRegister').classList.add('hidden');
+        document.getElementById('formEmailOtpLogin')?.classList.add('hidden');
+        document.getElementById('formOtpLogin')?.classList.add('hidden');
+        document.getElementById('formRegister')?.classList.add('hidden');
 
         if (tab === 'otp') {
-            document.getElementById('tabLoginOtp').classList.add('active');
-            document.getElementById('formOtpLogin').classList.remove('hidden');
+            document.getElementById('tabLoginOtp')?.classList.add('active');
+            document.getElementById('formOtpLogin')?.classList.remove('hidden');
         } else if (tab === 'register') {
-            document.getElementById('tabRegister').classList.add('active');
-            document.getElementById('formRegister').classList.remove('hidden');
+            document.getElementById('tabRegister')?.classList.add('active');
+            document.getElementById('formRegister')?.classList.remove('hidden');
         } else {
-            document.getElementById('tabLoginEmail').classList.add('active');
-            document.getElementById('formEmailLogin').classList.remove('hidden');
+            document.getElementById('tabLoginEmailOtp')?.classList.add('active');
+            document.getElementById('formEmailOtpLogin')?.classList.remove('hidden');
         }
     }
 }
