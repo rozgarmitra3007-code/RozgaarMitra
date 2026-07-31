@@ -1,0 +1,172 @@
+// Rozgaar Mitra (rozgaarmitra.com) - Full Production Prisma Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SEEKER
+  COMPANY
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum CompanyApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  REMOTE
+  HYBRID
+}
+
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  EXPIRED
+}
+
+enum ApplicationStatus {
+  APPLIED
+  SHORTLISTED
+  REJECTED
+  SELECTED
+}
+
+enum NotificationType {
+  JOB_ALERT
+  APPLICATION_UPDATE
+  COMPANY_APPROVAL
+  SYSTEM
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  mobile        String         @unique
+  passwordHash  String
+  role          Role           @default(SEEKER)
+  status        AccountStatus  @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  profile       Profile?
+  company       Company?
+  applications  Application[]
+  savedJobs     SavedJob[]
+  notifications Notification[]
+}
+
+model Profile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  qualification      String   // 10th Pass, 12th Pass, Diploma, Graduate, Post Graduate
+  experienceYears    String   // Fresher, 1-2 Years, 3-5 Years, 5+ Years
+  skills             String[] // e.g. ["Tally Prime", "GST", "Excel"]
+  location           String
+  resumeUrl          String?
+  photoUrl           String?
+  expectedSalaryMin  Int?
+  expectedSalaryMax  Int?
+  preferredCategory  String?
+  availability       String   @default("Immediate")
+  updatedAt          DateTime @updatedAt
+}
+
+model Company {
+  id             String                @id @default(uuid())
+  userId         String                @unique
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  companyName    String
+  industry       String
+  logoUrl        String?
+  website        String?
+  description    String                @db.Text
+  approvalStatus CompanyApprovalStatus @default(PENDING)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  jobs           Job[]
+}
+
+model Job {
+  id                    String        @id @default(uuid())
+  companyId             String
+  company               Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  title                 String
+  category              String
+  qualificationRequired String
+  experienceRequired    String
+  location              String
+  salaryMin             Int
+  salaryMax             Int
+  description           String        @db.Text
+  benefits              String[]
+  requiredSkills        String[]
+  jobType               JobType       @default(FULL_TIME)
+  status                JobStatus     @default(PUBLISHED)
+  lastDate              DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  applications          Application[]
+  savedByUsers          SavedJob[]
+
+  @@index([status])
+  @@index([category])
+  @@index([location])
+}
+
+model Application {
+  id          String            @id @default(uuid())
+  jobId       String
+  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  status      ApplicationStatus @default(APPLIED)
+  appliedAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([jobId, userId])
+}
+
+model SavedJob {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  savedAt   DateTime @default(now())
+
+  @@unique([userId, jobId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String
+  type      NotificationType @default(SYSTEM)
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}

@@ -1,0 +1,22 @@
+{
+  "nav": {
+    "home": "Home",
+    "jobs": "Search Jobs",
+    "categories": "Categories",
+    "about": "About Us",
+    "contact": "Contact Us",
+    "login": "Login",
+    "signup": "Register Account",
+    "dashboard": "Dashboard"
+  },
+  "hero": {
+    "badge": "India's Trusted Private Job Consultancy Platform",
+    "title1": "Find Your Ideal Private Job With ",
+    "title2": "Rozgaar Mitra",
+    "desc": "Thousands of verified private sector vacancies for 10th, 12th, Graduate, Diploma candidates & experienced professionals across India.",
+    "search_btn": "Search Jobs"
+  },
+  "footer": {
+    "rights": "All Rights Reserved. Rozgaar Mitra Consultancy Portal."
+  }
+}

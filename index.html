@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rozgaar Mitra | Private Sector Job Portal & Consultancy</title>
+    <meta name="description" content="Rozgaar Mitra (rozgaarmitra.com) - Your Career, Our Mission. India's trusted private job portal & consultancy. Privacy Policy, Terms & Conditions, and Refund Policy.">
+    <link rel="icon" type="image/png" href="logo.png">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="light">
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container top-bar-content">
+            <div class="contact-info">
+                <span><i class="fa-solid fa-phone"></i> Helpline: +91 120 456 7890</span>
+                <span><i class="fa-solid fa-envelope"></i> support@rozgaarmitra.com</span>
+            </div>
+            <div class="top-bar-right">
+                <span class="badge badge-primary"><i class="fa-solid fa-shield-halved"></i> Verified Private Jobs</span>
+                <button id="themeToggle" class="icon-btn" title="Toggle Theme"><i class="fa-solid fa-moon"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Navigation Header -->
+    <header class="main-header">
+        <div class="container navbar">
+            <a href="#" class="brand-logo" onclick="app.navigateTo('home')">
+                <img src="logo.png" alt="Rozgaar Mitra Logo" class="brand-logo-img">
+            </a>
+
+            <nav class="nav-menu" id="navMenu">
+                <a href="#" class="nav-link active" data-page="home" onclick="app.navigateTo('home')" id="navHome"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="#" class="nav-link" data-page="jobs" onclick="app.navigateTo('jobs')" id="navJobs"><i class="fa-solid fa-magnifying-glass"></i> Search Jobs</a>
+                
+                <!-- Candidate Nav Links (HIDDEN UNTIL LOGGED IN) -->
+                <a href="#" class="nav-link seeker-only hidden" data-page="profile" onclick="app.navigateTo('profile')" id="navProfile"><i class="fa-solid fa-user-pen"></i> My Profile</a>
+                <a href="#" class="nav-link seeker-only hidden" data-page="applications" onclick="app.navigateTo('applications')" id="navApps"><i class="fa-solid fa-paper-plane"></i> My Applications</a>
+                <a href="#" class="nav-link seeker-only hidden" data-page="saved" onclick="app.navigateTo('saved')" id="navSaved"><i class="fa-solid fa-bookmark"></i> Saved Jobs</a>
+                <a href="#" class="nav-link seeker-only hidden" data-page="notifications" onclick="app.navigateTo('notifications')" id="navNotifs"><i class="fa-solid fa-bell"></i> Notifications</a>
+                
+                <!-- Admin Only Nav Links -->
+                <a href="#" class="nav-link admin-only hidden" data-page="admin-dashboard" onclick="app.navigateTo('admin-dashboard')"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+                <a href="#" class="nav-link admin-only hidden" data-page="admin-jobs" onclick="app.navigateTo('admin-jobs')"><i class="fa-solid fa-list-check"></i> Manage Jobs</a>
+                <a href="#" class="nav-link admin-only hidden" data-page="admin-candidates" onclick="app.navigateTo('admin-candidates')"><i class="fa-solid fa-users"></i> Candidate Pool</a>
+            </nav>
+
+            <div class="header-actions">
+                <button class="btn btn-primary btn-sm admin-only hidden" onclick="app.openNewJobModal()"><i class="fa-solid fa-plus"></i> Post Job</button>
+                <button class="btn btn-outline btn-sm admin-only hidden" id="adminExitHeaderBtn" onclick="app.exitAdminMode()"><i class="fa-solid fa-right-from-bracket"></i> Exit Admin</button>
+                
+                <div class="auth-box" id="authBox">
+                    <button class="btn btn-outline btn-sm" onclick="app.openAuthModal('login')"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+                    <button class="btn btn-primary btn-sm" onclick="app.openAuthModal('register')"><i class="fa-solid fa-user-plus"></i> Register</button>
+                </div>
+
+                <div class="user-profile-menu hidden" id="userProfileMenu">
+                    <div class="user-avatar" id="navAvatar" style="width:34px; height:34px; border-radius:50%; background:#002b66; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold; overflow:hidden;">RM</div>
+                    <span class="user-name" id="navUserName" style="font-weight:600; font-size:0.9rem;">Candidate</span>
+                    <button class="btn btn-icon-only text-danger" onclick="app.logout()" title="Logout"><i class="fa-solid fa-power-off"></i></button>
+                </div>
+
+                <button class="mobile-toggle" onclick="app.toggleMobileNav()"><i class="fa-solid fa-bars"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Page Views -->
+    <main id="mainContainer">
+
+        <!-- VIEW 1: HOME PAGE -->
+        <section id="view-home" class="page-view active">
+            <div class="hero-section">
+                <div class="container hero-grid">
+                    <div class="hero-text">
+                        <span class="hero-badge" id="heroBadge"><i class="fa-solid fa-award"></i> Right Opportunities • Right Guidance • Better Future</span>
+                        <h1 id="heroTitle">Find Your Ideal Private Sector Job With <span class="text-highlight">Rozgaar Mitra</span></h1>
+                        <p class="hero-desc" id="heroDesc">Thousands of verified private sector job vacancies for 10th, 12th, Graduate, Diploma candidates, and experienced professionals across India.</p>
+                        
+                        <div class="hero-search-card">
+                            <form onsubmit="app.handleHeroSearch(event)">
+                                <div class="search-inputs">
+                                    <div class="search-field">
+                                        <input type="text" id="heroSearchKeyword" placeholder="Job Title, Skills (Tally, Sales, Driver, Developer)">
+                                    </div>
+                                    <div class="search-field">
+                                        <select id="heroSearchLocation">
+                                            <option value="">All Cities</option>
+                                            <option value="Delhi NCR">Delhi NCR (Noida, Gurgaon)</option>
+                                            <option value="Lucknow">Lucknow (UP)</option>
+                                            <option value="Patna">Patna (Bihar)</option>
+                                            <option value="Jaipur">Jaipur (Rajasthan)</option>
+                                            <option value="Mumbai">Mumbai / Pune</option>
+                                            <option value="Bengaluru">Bengaluru / Hyderabad</option>
+                                            <option value="Work From Home">Work From Home / Remote</option>
+                                        </select>
+                                    </div>
+                                    <div class="search-field">
+                                        <select id="heroSearchQual">
+                                            <option value="">Any Qualification</option>
+                                            <option value="10th Pass (High School)">10th Pass</option>
+                                            <option value="12th Pass (Intermediate)">12th Pass</option>
+                                            <option value="Diploma / ITI">Diploma / ITI</option>
+                                            <option value="Graduate (BA, B.Com, B.Sc, B.Tech, etc.)">Graduate</option>
+                                            <option value="Post Graduate (MBA, M.Com, M.Tech, etc.)">Post Graduate</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-search" id="heroSearchBtn"><i class="fa-solid fa-search"></i> Search Jobs</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="hero-visual">
+                        <div class="hero-visual-card">
+                            <div class="hero-logo-box">
+                                <img src="logo.png" alt="Rozgaar Mitra" class="hero-logo-img">
+                                <p class="text-secondary text-sm mt-1" style="font-weight:600; color:#f97316;">YOUR CAREER, OUR MISSION</p>
+                            </div>
+                            
+                            <div style="margin-bottom: 0.85rem;">
+                                <span class="text-sm font-weight-bold text-muted mb-2 d-block"><i class="fa-solid fa-shield-halved text-success"></i> Direct Private Job Consultancy</span>
+                                <p class="text-sm text-secondary">Verified hiring consultancy connecting job seekers with leading Indian private employers.</p>
+                            </div>
+
+                            <div class="p-3 bg-surface text-center" style="border:1px solid #e2e8f0; border-radius:8px;">
+                                <span class="text-sm font-weight-bold text-success"><i class="fa-solid fa-circle-check"></i> 100% Free Consultancy For Candidates</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories Section -->
+            <section class="section-padding bg-surface">
+                <div class="container">
+                    <div class="section-header text-center mb-4">
+                        <h2 id="catTitle">Popular Private Job Categories</h2>
+                        <p class="text-muted" id="catSub">Find jobs matching your qualification and skill set</p>
+                    </div>
+                    <div class="categories-grid" id="categoriesContainer"></div>
+                </div>
+            </section>
+
+            <!-- Featured Jobs Section -->
+            <section class="section-padding">
+                <div class="container">
+                    <div class="section-header flex-between mb-4">
+                        <div>
+                            <h2 id="featuredTitle">Latest Private Vacancies</h2>
+                            <p class="text-muted" id="featuredSub">Direct vacancies updated by Admin Consultants</p>
+                        </div>
+                        <button class="btn btn-outline btn-sm" onclick="app.navigateTo('jobs')">View All Jobs <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                    <div class="jobs-grid" id="featuredJobsContainer"></div>
+                </div>
+            </section>
+        </section>
+
+
+        <!-- VIEW 2: JOB SEARCH & FILTERING PAGE -->
+        <section id="view-jobs" class="page-view">
+            <div class="page-header bg-surface">
+                <div class="container">
+                    <h1>Search Private Sector Jobs</h1>
+                    <p>Filter by location, qualification, salary & job type</p>
+                </div>
+            </div>
+
+            <div class="container section-padding">
+                <div class="jobs-page-layout">
+                    <aside class="filters-sidebar">
+                        <div class="card p-3">
+                            <div class="flex-between mb-3 pb-2 border-bottom">
+                                <h3><i class="fa-solid fa-sliders"></i> Filter Jobs</h3>
+                                <button class="btn-text" onclick="app.resetJobFilters()">Reset Filters</button>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="text-sm font-weight-bold">Keyword Search</label>
+                                <input type="text" id="filterKeyword" class="form-control" placeholder="Title, skill, company..." oninput="app.applyJobFilters()">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="text-sm font-weight-bold">Category</label>
+                                <select id="filterCategory" class="form-control" onchange="app.applyJobFilters()">
+                                    <option value="">All Categories</option>
+                                    <option value="Accounts & Finance">Accounts & Finance</option>
+                                    <option value="Sales & Marketing">Sales & Marketing</option>
+                                    <option value="Telecalling & Customer Support">Telecalling & Support</option>
+                                    <option value="Back Office & Data Entry">Back Office & Data Entry</option>
+                                    <option value="IT & Software Development">IT & Software</option>
+                                    <option value="Operations & Logistics">Operations & Logistics</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="text-sm font-weight-bold">Location</label>
+                                <select id="filterLocation" class="form-control" onchange="app.applyJobFilters()">
+                                    <option value="">All Cities</option>
+                                    <option value="Delhi NCR">Delhi NCR</option>
+                                    <option value="Lucknow">Lucknow</option>
+                                    <option value="Patna">Patna</option>
+                                    <option value="Jaipur">Jaipur</option>
+                                    <option value="Mumbai">Mumbai / Pune</option>
+                                    <option value="Bengaluru">Bengaluru</option>
+                                    <option value="Work From Home">Work From Home / Remote</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="text-sm font-weight-bold">Qualification</label>
+                                <select id="filterQualification" class="form-control" onchange="app.applyJobFilters()">
+                                    <option value="">Any Qualification</option>
+                                    <option value="10th Pass (High School)">10th Pass</option>
+                                    <option value="12th Pass (Intermediate)">12th Pass</option>
+                                    <option value="Diploma / ITI">Diploma / ITI</option>
+                                    <option value="Graduate (BA, B.Com, B.Sc, B.Tech, etc.)">Graduate</option>
+                                </select>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <main>
+                        <div class="flex-between mb-3 pb-2 border-bottom text-sm text-secondary">
+                            <span id="jobsResultCount">Showing 0 jobs</span>
+                            <div>
+                                <label>Sort By:</label>
+                                <select id="sortJobs" class="form-control" style="display:inline-block; width:auto;" onchange="app.applyJobFilters()">
+                                    <option value="latest">Latest First</option>
+                                    <option value="salary-high">Salary: High to Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="allJobsContainer" class="jobs-list"></div>
+                    </main>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- VIEW 3: JOB DETAILS PAGE -->
+        <section id="view-job-detail" class="page-view">
+            <div class="container section-padding">
+                <button class="btn btn-outline btn-sm mb-4" onclick="app.navigateTo('jobs')"><i class="fa-solid fa-arrow-left"></i> Back to Jobs</button>
+                <div id="jobDetailContent"></div>
+            </div>
+        </section>
+
+
+        <!-- VIEW 4: PROFILE BUILDER WITH PHOTO & RESUME UPLOAD -->
+        <section id="view-profile" class="page-view">
+            <div class="page-header bg-surface">
+                <div class="container">
+                    <h1>My Candidate Profile</h1>
+                    <p>Upload candidate photo, resume document, education, and skills</p>
+                </div>
+            </div>
+
+            <div class="container section-padding">
+                <form id="profileForm" onsubmit="app.saveProfile(event)" class="profile-layout" style="max-width:800px; margin:0 auto;">
+                    
+                    <!-- Candidate Photo Upload Card -->
+                    <div class="card p-4 mb-4 text-center">
+                        <h3><i class="fa-solid fa-camera text-primary"></i> Candidate Profile Photo</h3>
+                        <p class="text-sm text-secondary mb-3">Upload your professional passport-style candidate photo</p>
+                        <div style="display:flex; flex-direction:column; align-items:center; gap:0.75rem;">
+                            <img id="profPhotoPreview" class="hidden" src="" alt="Candidate Photo" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid #002b66; box-shadow:var(--shadow-md);">
+                            <input type="file" id="profPhotoInput" accept="image/*" class="form-control" style="max-width:320px;" onchange="app.handlePhotoUpload(event)">
+                        </div>
+                    </div>
+
+                    <div class="card p-4 mb-4">
+                        <h3><i class="fa-solid fa-user"></i> Personal Contact Details</h3>
+                        <div class="form-grid mt-3">
+                            <div class="form-group">
+                                <label>Full Name *</label>
+                                <input type="text" id="profName" class="form-control" required placeholder="Enter full name">
+                            </div>
+                            <div class="form-group">
+                                <label>Email Address *</label>
+                                <input type="email" id="profEmail" class="form-control" required placeholder="Enter email address">
+                            </div>
+                            <div class="form-group">
+                                <label>Mobile Number *</label>
+                                <input type="tel" id="profMobile" class="form-control" required placeholder="Enter 10-digit mobile number">
+                            </div>
+                            <div class="form-group">
+                                <label>Current Location *</label>
+                                <input type="text" id="profLocation" class="form-control" required placeholder="Delhi NCR, Lucknow, Patna">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-4 mb-4">
+                        <h3><i class="fa-solid fa-graduation-cap"></i> Education & Experience</h3>
+                        <div class="form-grid mt-3">
+                            <div class="form-group">
+                                <label>Highest Qualification *</label>
+                                <select id="profQualification" class="form-control" required>
+                                    <option value="10th Pass (High School)">10th Pass</option>
+                                    <option value="12th Pass (Intermediate)">12th Pass</option>
+                                    <option value="Diploma / ITI">Diploma / ITI</option>
+                                    <option value="Graduate (BA, B.Com, B.Sc, B.Tech, etc.)">Graduate</option>
+                                    <option value="Post Graduate (MBA, M.Com, M.Tech, etc.)">Post Graduate</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Work Experience *</label>
+                                <select id="profExperience" class="form-control" required>
+                                    <option value="Fresher">Fresher (0 Years)</option>
+                                    <option value="1-2 Years">1 - 2 Years</option>
+                                    <option value="3-5 Years">3 - 5 Years</option>
+                                    <option value="5+ Years">5+ Years</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resume Document Upload Card -->
+                    <div class="card p-4 mb-4">
+                        <h3><i class="fa-solid fa-file-pdf text-danger"></i> Upload Resume / CV Document</h3>
+                        <p class="text-sm text-secondary mb-3">Upload PDF or Word document for recruiter review</p>
+                        <input type="file" id="profResumeInput" accept=".pdf,.doc,.docx" class="form-control" onchange="app.handleResumeUpload(event)">
+                        <span id="profResumeName" class="text-sm font-weight-bold text-success mt-2 d-block"></span>
+                    </div>
+
+                    <div class="card p-4 mb-4">
+                        <h3><i class="fa-solid fa-tags"></i> Skills Tag Input</h3>
+                        <div class="skills-selector mt-3" id="skillsTagContainer"></div>
+                    </div>
+
+                    <div class="text-right">
+                        <button type="submit" class="btn btn-primary btn-lg"><i class="fa-solid fa-floppy-disk"></i> Save Candidate Profile</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+
+        <!-- VIEW 5: APPLICATIONS TRACKER -->
+        <section id="view-applications" class="page-view">
+            <div class="page-header bg-surface">
+                <div class="container">
+                    <h1>My Job Applications</h1>
+                    <p>Track application status (Applied / Shortlisted / Rejected / Selected)</p>
+                </div>
+            </div>
+            <div class="container section-padding">
+                <div id="applicationsContainer"></div>
+            </div>
+        </section>
+
+
+        <!-- VIEW 6: SAVED JOBS -->
+        <section id="view-saved" class="page-view">
+            <div class="page-header bg-surface">
+                <div class="container">
+                    <h1>Saved Jobs (Bookmarked)</h1>
+                    <p>Jobs you have saved for later application</p>
+                </div>
+            </div>
+            <div class="container section-padding">
+                <div id="savedJobsContainer" class="jobs-grid"></div>
+            </div>
+        </section>
+
+
+        <!-- VIEW 7: NOTIFICATIONS -->
+        <section id="view-notifications" class="page-view">
+            <div class="page-header bg-surface">
+                <div class="container">
+                    <h1>Notifications</h1>
+                    <p>Job alerts and status updates</p>
+                </div>
+            </div>
+            <div class="container section-padding">
+                <div id="notificationsContainer"></div>
+            </div>
+        </section>
+
+
+        <!-- VIEW 8: ADMIN DASHBOARD -->
+        <section id="view-admin-dashboard" class="page-view">
+            <div class="page-header bg-dark text-white">
+                <div class="container flex-between">
+                    <div>
+                        <h1><i class="fa-solid fa-user-shield text-highlight"></i> Admin Consultant Panel</h1>
+                        <p>Rozgaar Mitra Private Job Consultancy Management</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="app.openNewJobModal()"><i class="fa-solid fa-plus"></i> Post New Job</button>
+                </div>
+            </div>
+
+            <div class="container section-padding">
+                <div class="form-grid mb-4">
+                    <div class="card p-4 text-center">
+                        <h2 id="admTotalJobs">0</h2>
+                        <span class="text-muted">Total Jobs</span>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <h2 id="admTotalSeekers">0</h2>
+                        <span class="text-muted">Candidates</span>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <h2 id="admTotalApplications">0</h2>
+                        <span class="text-muted">Applications</span>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <h2 id="admShortlistedCount">0</h2>
+                        <span class="text-muted">Shortlisted</span>
+                    </div>
+                </div>
+
+                <div class="card p-4">
+                    <h3>Recent Candidate Applications Received</h3>
+                    <div class="table-responsive mt-3">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Candidate</th>
+                                    <th>Job Title</th>
+                                    <th>Qualification</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admRecentAppsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- VIEW 9: ADMIN MANAGE JOBS -->
+        <section id="view-admin-jobs" class="page-view">
+            <div class="page-header bg-dark text-white">
+                <div class="container flex-between">
+                    <div>
+                        <h1>Manage & Edit Jobs</h1>
+                        <p>Post, edit, delete, or mark jobs as "Vacancy Full / Hiring Closed"</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="app.openNewJobModal()"><i class="fa-solid fa-plus"></i> Post New Job</button>
+                </div>
+            </div>
+            <div class="container section-padding">
+                <div class="card p-0">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Title & Company</th>
+                                    <th>Category</th>
+                                    <th>City</th>
+                                    <th>Salary</th>
+                                    <th>Status</th>
+                                    <th>Admin Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminJobsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- VIEW 10: ADMIN CANDIDATES -->
+        <section id="view-admin-candidates" class="page-view">
+            <div class="page-header bg-dark text-white">
+                <div class="container">
+                    <h1>Candidate Database Search</h1>
+                    <p>Search talent pool by qualification, skills, and city</p>
+                </div>
+            </div>
+            <div class="container section-padding">
+                <div id="candidateDatabaseContainer" class="jobs-grid"></div>
+            </div>
+        </section>
+
+
+        <!-- LEGAL VIEW 1: PRIVACY POLICY -->
+        <section id="view-privacy" class="page-view">
+            <div class="page-header bg-surface">
+                <div class="container">
+                    <h1>Privacy Policy</h1>
+                    <p>Digital Personal Data Protection (DPDP Act, 2023 Compliant) • Last Updated: July 30, 2026</p>
+                </div>
+            </div>
+
+            <div class="container section-padding">
+                <div class="card p-5" style="max-width:900px; margin:0 auto; line-height:1.7;">
+                    <p class="mb-4">Rozgaar Mitra ("we", "us", "our") operates the website <strong>rozgaarmitra.com</strong> (the "Platform"). This Privacy Policy explains how we collect, use, store, and protect your personal information when you use our Platform.</p>
+
+                    <h3 class="mt-4 mb-2">1. Information We Collect</h3>
+                    <p><strong>From Job Seekers:</strong> Name, email address, mobile number, date of birth, photograph, educational qualifications, work experience, skills, resume/CV, preferred job category, location, and salary expectations. Login credentials are stored in encrypted/hashed form.</p>
+                    <p><strong>From Employers/Consultants:</strong> Company name, industry, website, logo, description, contact details, and job posting details.</p>
+                    <p><strong>Automatically Collected:</strong> IP address, browser type, device information, and usage analytics.</p>
+
+                    <h3 class="mt-4 mb-2">2. How We Use Your Information</h3>
+                    <ul class="ml-4 mb-3">
+                        <li>To create and manage your candidate profile</li>
+                        <li>To match job seekers with relevant private job vacancies</li>
+                        <li>To allow verified recruiters/consultants to review job applications</li>
+                        <li>To send job alerts, application status notifications, and updates</li>
+                        <li>To comply with Indian legal obligations including the DPDP Act 2023</li>
+                    </ul>
+
+                    <h3 class="mt-4 mb-2">3. Data Sharing & Protection</h3>
+                    <p>Your profile and resume are shared with employers/consultants only when you apply for a job. <strong>We do not sell your personal data to third parties.</strong> Data is stored on secure cloud servers with industry-standard encryption.</p>
+
+                    <h3 class="mt-4 mb-2">4. Your Rights</h3>
+                    <p>You have the right to access, update, correct, or request deletion of your personal data at any time by contacting us at <strong>support@rozgaarmitra.com</strong>.</p>
+
+                    <h3 class="mt-4 mb-2">5. Contact Us</h3>
+                    <p><strong>Rozgaar Mitra Consultancy</strong><br>Email: support@rozgaarmitra.com<br>Address: Sector 62, Noida, Gautam Buddha Nagar, Uttar Pradesh, India</p>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- LEGAL VIEW 2: TERMS & CONDITIONS -->
+        <section id="view-terms" class="page-view">
+            <div class="page-header bg-surface">
+                <div class="container">
+                    <h1>Terms & Conditions</h1>
+                    <p>Platform Usage & Service Agreement • Last Updated: July 30, 2026</p>
+                </div>
+            </div>
+
+            <div class="container section-padding">
+                <div class="card p-5" style="max-width:900px; margin:0 auto; line-height:1.7;">
+                    <p class="mb-4">Welcome to Rozgaar Mitra (<strong>rozgaarmitra.com</strong>). By accessing or using our Platform, you agree to be bound by these Terms & Conditions ("Terms").</p>
+
+                    <h3 class="mt-4 mb-2">1. Eligibility & Registration</h3>
+                    <p>You must be at least 18 years old to register as a candidate. You agree to provide truthful and accurate information in your profile and resume.</p>
+
+                    <h3 class="mt-4 mb-2">2. Role of Rozgaar Mitra</h3>
+                    <p>Rozgaar Mitra is a private sector job consultancy platform connecting candidates with employer vacancies. <strong>We do not charge job seekers any fee to apply or secure a job.</strong> We do not guarantee employment, as hiring decisions rest solely with the employer.</p>
+
+                    <h3 class="mt-4 mb-2">3. Prohibited Conduct</h3>
+                    <p>Users shall not post false/defamatory content, charge candidates unauthorized placement fees, or use automated scraping bots.</p>
+
+                    <h3 class="mt-4 mb-2">4. Governing Law & Jurisdiction</h3>
+                    <p>These Terms shall be governed by the laws of India, subject to the exclusive jurisdiction of the courts of <strong>Gautam Buddha Nagar (Noida, UP), India</strong>.</p>
+
+                    <h3 class="mt-4 mb-2">5. Contact Information</h3>
+                    <p><strong>Rozgaar Mitra Consultancy</strong><br>Email: support@rozgaarmitra.com<br>Address: Sector 62, Noida, Uttar Pradesh, India</p>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- LEGAL VIEW 3: REFUND POLICY -->
+        <section id="view-refund" class="page-view">
+            <div class="page-header bg-surface">
+                <div class="container">
+                    <h1>Refund & Billing Policy</h1>
+                    <p>Candidate & Employer Fee Structure • Last Updated: July 30, 2026</p>
+                </div>
+            </div>
+
+            <div class="container section-padding">
+                <div class="card p-5" style="max-width:900px; margin:0 auto; line-height:1.7;">
+                    <div class="badge badge-success p-3 text-md mb-4" style="font-size:0.95rem; width:100%; justify-content:center;">
+                        <i class="fa-solid fa-circle-check"></i> 100% FREE FOR ALL JOB SEEKERS (NO CHARGES)
+                    </div>
+
+                    <h3 class="mt-4 mb-2">1. For Job Seekers</h3>
+                    <p>Rozgaar Mitra does <strong>NOT charge job seekers any fee</strong> to register, build a profile, browse jobs, or apply. Since no payment is collected from job seekers, no refund is applicable. If any third party demands payment on behalf of Rozgaar Mitra, please report it immediately to <strong>support@rozgaarmitra.com</strong>.</p>
+
+                    <h3 class="mt-4 mb-2">2. For Employers / Paid Corporate Services</h3>
+                    <p>If an employer purchases a featured listing or premium hiring package: Refunds may be requested within 7 days of purchase if the service has not been activated. Approved refunds will be processed within 7–14 business days to the original payment method.</p>
+
+                    <h3 class="mt-4 mb-2">3. Billing Contact</h3>
+                    <p><strong>Rozgaar Mitra Support</strong><br>Email: support@rozgaarmitra.com<br>Phone: +91 120 456 7890</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER WITH DISCRETE ADMIN LOGIN LINK AT VERY BOTTOM -->
+    <footer class="main-footer">
+        <div class="container footer-grid">
+            <div class="footer-col brand-col">
+                <div class="logo-text mb-3">
+                    <img src="logo.png" alt="Rozgaar Mitra Logo" class="footer-logo-img mb-2 d-block">
+                </div>
+                <p>Right Opportunities • Right Guidance • Better Future — India's verified private sector job portal and consultancy platform.</p>
+            </div>
+
+            <div class="footer-col">
+                <h4>Job Seekers</h4>
+                <ul>
+                    <li><a href="#" onclick="app.navigateTo('jobs')">Search Private Jobs</a></li>
+                    <li><a href="#" onclick="app.navigateTo('profile')">Create Profile</a></li>
+                    <li><a href="#" onclick="app.navigateTo('applications')">My Applications</a></li>
+                    <li><a href="#" onclick="app.navigateTo('saved')">Saved Bookmarks</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Legal & Policies</h4>
+                <ul>
+                    <li><a href="#" onclick="app.navigateTo('privacy')"><i class="fa-solid fa-user-shield"></i> Privacy Policy (DPDP 2023)</a></li>
+                    <li><a href="#" onclick="app.navigateTo('terms')"><i class="fa-solid fa-file-contract"></i> Terms & Conditions</a></li>
+                    <li><a href="#" onclick="app.navigateTo('refund')"><i class="fa-solid fa-receipt"></i> Refund Policy</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Contact Consultancy</h4>
+                <ul>
+                    <li><i class="fa-solid fa-location-dot"></i> Sector 62, Noida / Delhi NCR</li>
+                    <li><i class="fa-solid fa-phone"></i> +91 120 456 7890</li>
+                    <li><i class="fa-solid fa-envelope"></i> support@rozgaarmitra.com</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom text-center">
+            <div class="container">
+                <p>&copy; 2026 Rozgaar Mitra (rozgaarmitra.com). All Rights Reserved. Indian Private Sector Job Consultancy. 
+                <a href="#" onclick="app.openAdminLoginModal()" style="color:#64748b; font-size:0.72rem; text-decoration:none; opacity:0.5; margin-left:12px;" title="Internal Portal"><i class="fa-solid fa-lock"></i> Admin Portal</a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Auth Modal (Candidates) -->
+    <div class="modal-backdrop hidden" id="authModal">
+        <div class="modal-card">
+            <button class="modal-close" onclick="app.closeModal('authModal')"><i class="fa-solid fa-xmark"></i></button>
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tabLoginEmail" onclick="app.switchAuthTab('email')">Email Login</button>
+                <button class="auth-tab" id="tabLoginOtp" onclick="app.switchAuthTab('otp')">Mobile OTP</button>
+                <button class="auth-tab" id="tabRegister" onclick="app.switchAuthTab('register')">Register</button>
+            </div>
+
+            <form id="formEmailLogin" onsubmit="app.handleLogin(event)">
+                <div class="mb-3">
+                    <label class="text-sm font-weight-bold">Email Address</label>
+                    <input type="email" id="loginEmail" class="form-control" required placeholder="Enter email address">
+                </div>
+                <div class="mb-3">
+                    <label class="text-sm font-weight-bold">Password</label>
+                    <input type="password" id="loginPassword" class="form-control" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Login to Account</button>
+            </form>
+
+            <form id="formOtpLogin" class="hidden" onsubmit="app.handleOtpLogin(event)">
+                <div class="mb-3">
+                    <label class="text-sm font-weight-bold">Mobile Number (+91)</label>
+                    <div style="display:flex; gap:0.5rem;">
+                        <input type="tel" id="otpMobile" class="form-control" placeholder="10-digit mobile number" required>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="app.sendOtpCode()">Get OTP</button>
+                    </div>
+                </div>
+                <div class="mb-3 hidden" id="otpCodeGroup">
+                    <label class="text-sm font-weight-bold">Enter Verification OTP</label>
+                    <input type="text" id="otpInputCode" class="form-control" placeholder="Enter 6-digit OTP" maxlength="6">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Verify OTP & Login</button>
+            </form>
+
+            <form id="formRegister" class="hidden" onsubmit="app.handleRegister(event)">
+                <div class="mb-3">
+                    <label class="text-sm font-weight-bold">Full Name</label>
+                    <input type="text" id="regName" class="form-control" required placeholder="Enter full name">
+                </div>
+                <div class="mb-3">
+                    <label class="text-sm font-weight-bold">Email Address</label>
+                    <input type="email" id="regEmail" class="form-control" required placeholder="Enter email address">
+                </div>
+                <div class="mb-3">
+                    <label class="text-sm font-weight-bold">Mobile Number</label>
+                    <input type="tel" id="regMobile" class="form-control" required placeholder="Enter 10-digit mobile number">
+                </div>
+                <div class="mb-3 text-sm">
+                    <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                        <input type="checkbox" id="regTermsCheck" required style="width:auto;">
+                        <span>I agree to the <a href="#" onclick="app.closeModal('authModal'); app.navigateTo('terms');">Terms & Conditions</a> and <a href="#" onclick="app.closeModal('authModal'); app.navigateTo('privacy');">Privacy Policy</a></span>
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Create Candidate Account</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DISCRETE ADMIN PORTAL LOGIN MODAL -->
+    <div class="modal-backdrop hidden" id="adminAuthModal">
+        <div class="modal-card" style="max-width:400px;">
+            <button class="modal-close" onclick="app.closeModal('adminAuthModal')"><i class="fa-solid fa-xmark"></i></button>
+            <div class="text-center mb-3">
+                <div style="width:50px; height:50px; border-radius:50%; background:#002b66; color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.3rem; margin:0 auto 0.75rem;">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h2>Admin Portal Login</h2>
+                <p class="text-sm text-secondary">Rozgaar Mitra Internal Management</p>
+            </div>
+            <form onsubmit="app.verifyAdminPasscode(event)">
+                <div class="mb-3">
+                    <label class="text-sm font-weight-bold">Admin Secret Passcode</label>
+                    <input type="password" id="adminPasscodeInput" class="form-control" required placeholder="Enter admin passcode">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-lock"></i> Verify & Unlock Admin Panel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Post / Edit Job Modal -->
+    <div class="modal-backdrop hidden" id="jobModal">
+        <div class="modal-card modal-lg">
+            <button class="modal-close" onclick="app.closeModal('jobModal')"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="jobModalTitle">Post / Edit Private Job</h2>
+            <form id="jobForm" onsubmit="app.saveJob(event)" class="mt-3">
+                <input type="hidden" id="jobEditId">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Job Title *</label>
+                        <input type="text" id="jobTitle" class="form-control" required placeholder="Senior Accountant">
+                    </div>
+                    <div class="form-group">
+                        <label>Company Name *</label>
+                        <input type="text" id="jobCompany" class="form-control" required placeholder="Apex Freight Pvt Ltd">
+                    </div>
+                    <div class="form-group">
+                        <label>Category *</label>
+                        <select id="jobCategory" class="form-control" required>
+                            <option value="Accounts & Finance">Accounts & Finance</option>
+                            <option value="Sales & Marketing">Sales & Marketing</option>
+                            <option value="Telecalling & Customer Support">Telecalling & Support</option>
+                            <option value="Back Office & Data Entry">Back Office & Data Entry</option>
+                            <option value="IT & Software Development">IT & Software</option>
+                            <option value="Operations & Logistics">Operations & Logistics</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Location / City *</label>
+                        <input type="text" id="jobLocation" class="form-control" required placeholder="Noida, Delhi NCR">
+                    </div>
+                    <div class="form-group">
+                        <label>Salary Range *</label>
+                        <input type="text" id="jobSalary" class="form-control" required placeholder="₹25,000 - ₹32,000 / month">
+                    </div>
+                    <div class="form-group">
+                        <label>Min Qualification *</label>
+                        <select id="jobQualification" class="form-control" required>
+                            <option value="10th Pass (High School)">10th Pass</option>
+                            <option value="12th Pass (Intermediate)">12th Pass</option>
+                            <option value="Diploma / ITI">Diploma / ITI</option>
+                            <option value="Graduate (BA, B.Com, B.Sc, B.Tech, etc.)">Graduate</option>
+                        </select>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Job Description *</label>
+                        <textarea id="jobDesc" class="form-control" rows="4" required></textarea>
+                    </div>
+                </div>
+                <div class="text-right mt-3">
+                    <button type="submit" class="btn btn-primary">Save Job Details</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Explicit Delete Job Warning Confirmation Modal -->
+    <div class="modal-backdrop hidden" id="deleteConfirmModal">
+        <div class="modal-card text-center" style="max-width:420px;">
+            <button class="modal-close" onclick="app.closeModal('deleteConfirmModal')"><i class="fa-solid fa-xmark"></i></button>
+            <div style="width:65px; height:65px; border-radius:50%; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:1.9rem; margin:0 auto 1rem;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 style="color:#0f172a; margin-bottom:0.5rem; font-size:1.3rem;">Delete Job Vacancy?</h3>
+            <p class="text-secondary text-sm mb-4" id="deleteJobWarningText">Are you sure you want to permanently delete this job? This action cannot be undone.</p>
+            <div style="display:flex; gap:0.75rem; justify-content:center;">
+                <button class="btn btn-outline" onclick="app.closeModal('deleteConfirmModal')">Cancel</button>
+                <button class="btn btn-primary" style="background-color:#dc2626; border-color:#dc2626;" onclick="app.confirmDeleteJob()"><i class="fa-solid fa-trash"></i> Yes, Delete Job</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS Core Engine -->
+    <script src="app.js"></script>
+</body>
+</html>
