@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Sitemap URL for Googlebot & Search Engine Indexing
+Sitemap: https://www.rozgaarmitra.com/sitemap.xml

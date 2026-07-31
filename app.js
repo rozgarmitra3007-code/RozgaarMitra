@@ -1,6 +1,7 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - ULTRA-HIGH SCALE PRODUCTION CORE ENGINE
  * Candidate view/apply, Photo & Resume file upload, Real Generated 6-Digit Email & Mobile OTP Verification,
+ * Google for Jobs JSON-LD JobPosting Schema (schema.org/JobPosting) & Dynamic Sitemap Integration,
  * Secret Invisible Admin Portal (Passcode: Admin@75100), MSME Govt Registration (UDYAM-UP-03-0139326),
  * Job Management, Hiring Closed controls, and login-gated navbar visibility.
  */
@@ -40,6 +41,7 @@ class RozgaarMitraApp {
         this.applyJobFilters();
         this.updateStatsCounters();
         this.setupSecretAdminTriggers();
+        this.updateGoogleJobPostingSchema();
 
         const savedUser = this.getStorageItem('rm_current_user');
         if (savedUser) {
@@ -61,6 +63,52 @@ class RozgaarMitraApp {
         });
         
         this.updateUserUI();
+    }
+
+    // Google for Jobs JSON-LD Schema Generator (schema.org/JobPosting)
+    updateGoogleJobPostingSchema() {
+        const scriptEl = document.getElementById('jobPostingSchemaScript');
+        if (!scriptEl) return;
+
+        const schemas = this.jobs.map(j => ({
+            "@context": "https://schema.org/",
+            "@type": "JobPosting",
+            "title": j.title,
+            "description": j.description || `${j.title} vacancy at ${j.companyName} in ${j.location}. Minimum qualification required: ${j.qualificationRequired}.`,
+            "identifier": {
+                "@type": "PropertyValue",
+                "name": "Rozgaar Mitra",
+                "value": j.id
+            },
+            "datePosted": j.postedAt || new Date().toISOString().split('T')[0],
+            "validThrough": "2026-12-31T23:59:59Z",
+            "employmentType": "FULL_TIME",
+            "hiringOrganization": {
+                "@type": "Organization",
+                "name": j.companyName,
+                "sameAs": "https://www.rozgaarmitra.com/",
+                "logo": "https://www.rozgaarmitra.com/logo.png"
+            },
+            "jobLocation": {
+                "@type": "Place",
+                "address": {
+                    "@type": "PostalAddress",
+                    "addressLocality": j.location,
+                    "addressCountry": "IN"
+                }
+            },
+            "baseSalary": {
+                "@type": "MonetaryAmount",
+                "currency": "INR",
+                "value": {
+                    "@type": "QuantitativeValue",
+                    "unitText": "MONTH",
+                    "value": j.salary
+                }
+            }
+        }));
+
+        scriptEl.textContent = JSON.stringify(schemas);
     }
 
     // Safe Storage Wrappers for Zero-Crash Reliability
@@ -130,6 +178,7 @@ class RozgaarMitraApp {
         this.setStorageItem('rm_saved_job_ids', JSON.stringify(this.savedJobIds));
         this.setStorageItem('rm_notifications', JSON.stringify(this.notifications));
         this.updateStatsCounters();
+        this.updateGoogleJobPostingSchema();
     }
 
     setupTheme() {
