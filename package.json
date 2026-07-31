@@ -4,14 +4,6 @@
   "description": "Rozgaar Mitra - India's Trusted Private Sector Job Portal & Consultancy Platform",
   "main": "index.html",
   "scripts": {
-    "start": "npx serve .",
-    "build": "echo 'Static HTML build complete'"
-  },
-  "keywords": [
-    "job-portal",
-    "rozgaar-mitra",
-    "india-jobs"
-  ],
-  "author": "Rozgaar Mitra Consultancy",
-  "license": "ISC"
+    "build": "echo 'Static Site'"
+  }
 }
