@@ -1,0 +1,46 @@
+[
+  {
+    "id": "cand-seed-1",
+    "name": "Rahul Sharma",
+    "email": "rahul.sharma99@gmail.com",
+    "mobile": "+91 9811234567",
+    "qualification": "Graduate (B.Com)",
+    "experienceYears": "1-2 Years",
+    "location": "Noida, Delhi NCR",
+    "preferredCategory": "Accounts & Finance",
+    "preferredCity": "Delhi NCR",
+    "expectedSalaryMin": "22000",
+    "expectedSalaryMax": "28000",
+    "skills": [
+      "Tally Prime",
+      "GST Filing",
+      "MS Excel"
+    ],
+    "dob": "1998-05-14",
+    "gender": "Male",
+    "isSuspended": false,
+    "registeredAt": "2026-07-31"
+  },
+  {
+    "id": "cand-seed-2",
+    "name": "Priya Verma",
+    "email": "priya.verma.hr@gmail.com",
+    "mobile": "+91 9876512340",
+    "qualification": "12th Pass (Intermediate)",
+    "experienceYears": "Fresher",
+    "location": "Lucknow, UP",
+    "preferredCategory": "Telecalling & Customer Support",
+    "preferredCity": "Lucknow",
+    "expectedSalaryMin": "16000",
+    "expectedSalaryMax": "22000",
+    "skills": [
+      "Customer Support",
+      "English Speaking",
+      "Telecalling"
+    ],
+    "dob": "2001-08-22",
+    "gender": "Female",
+    "isSuspended": false,
+    "registeredAt": "2026-07-31"
+  }
+]
