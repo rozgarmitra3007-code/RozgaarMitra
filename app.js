@@ -1,8 +1,7 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - PRODUCTION CORE ENGINE
  * 
- * FLEXIBLE ADMIN EMAIL & SECURE PASSWORD (Admin@75100) WITH 2FA OTP
- * Accepts support@rozgaarmitra.com, grahlakshmivivahofficial@gmail.com, or any valid official admin email!
+ * CANDIDATE AUTHENTICATION: EMAIL OTP ONLY (Mobile OTP Removed per User Request)
  */
 
 class RozgaarMitraApp {
@@ -11,7 +10,6 @@ class RozgaarMitraApp {
         this.currentUser = null;
         this.currentView = 'home';
         this.pendingDeleteJobId = null;
-        this.generatedOtp = null;
         this.generatedEmailOtp = null;
         this.generatedAdmin2faOtp = null;
         this.candidatePhotoDataUrl = null;
@@ -322,7 +320,7 @@ class RozgaarMitraApp {
         setInterval(() => {
             if (this.currentRole === 'ADMIN') {
                 const elapsed = Date.now() - this.adminLastActivity;
-                if (elapsed > 30 * 60 * 1000) { // 30 Minutes
+                if (elapsed > 30 * 60 * 1000) {
                     this.clearAdminSession();
                     alert('🔒 ADMIN SESSION EXPIRED!\n\nLogged out automatically due to 30 minutes of inactivity for security protection.');
                     this.navigateTo('home');
@@ -369,7 +367,6 @@ class RozgaarMitraApp {
     }
 
     setupSecretAdminTriggers() {
-        // 1. Secret Keyboard Shortcut: Ctrl + Shift + A
         window.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
                 e.preventDefault();
@@ -377,7 +374,6 @@ class RozgaarMitraApp {
             }
         });
 
-        // 2. Secret Triple Click Gesture on Footer Copyright Text
         const copyEl = document.getElementById('copyrightText');
         if (copyEl) {
             copyEl.addEventListener('click', () => {
@@ -441,14 +437,12 @@ class RozgaarMitraApp {
         const protectedPages = ['profile', 'applications', 'saved', 'notifications'];
         const adminPages = ['admin-dashboard', 'admin-jobs', 'admin-candidates'];
 
-        // Strict Admin Route Protection
         if (adminPages.includes(pageId) && this.currentRole !== 'ADMIN') {
             alert('🚨 Access Denied!\n\nCandidate profiles and application database are strictly protected. Admin authentication required.');
             this.openAdminLoginModal();
             return;
         }
 
-        // Strict Seeker Login Protection
         if (protectedPages.includes(pageId) && !this.currentUser && this.currentRole !== 'ADMIN') {
             this.openAuthModal('email-otp');
             alert('Please login to access your personal candidate profile & applications.');
@@ -480,7 +474,7 @@ class RozgaarMitraApp {
         if (pageId === 'admin-candidates') this.filterCandidateDatabase();
     }
 
-    // FLEXIBLE ADMIN AUTHENTICATION (Accepts any email + Password Admin@75100)
+    // FLEXIBLE ADMIN AUTHENTICATION
     checkAdminHash() {
         if (window.location.hash === '#admin') {
             this.openAdminLoginModal();
@@ -513,7 +507,7 @@ class RozgaarMitraApp {
         if (!email || !email.includes('@') || pass !== this.adminPasswordSecret) {
             this.failedAdminAttempts++;
             if (this.failedAdminAttempts >= 5) {
-                this.adminLockoutTime = Date.now() + (15 * 60 * 1000); // 15 Minute Lockout
+                this.adminLockoutTime = Date.now() + (15 * 60 * 1000);
                 this.closeModal('adminAuthModal');
                 alert('🚨 SECURITY LOCKOUT!\n\n5 Failed Admin Login Attempts Detected. Portal locked for 15 minutes to prevent unauthorized access.');
             } else {
@@ -523,7 +517,6 @@ class RozgaarMitraApp {
             return;
         }
 
-        // Credentials valid -> Generate 2FA OTP
         this.generatedAdmin2faOtp = Math.floor(100000 + Math.random() * 900000).toString();
         document.getElementById('admin2faGroup').classList.remove('hidden');
         alert(`🔒 ADMIN 2-FACTOR AUTHENTICATION (2FA)\n\nCredentials Verified for ${email}!\n\nYour 6-Digit Admin 2FA Security OTP is: ${this.generatedAdmin2faOtp}`);
@@ -640,7 +633,6 @@ class RozgaarMitraApp {
         this.applyJobFilters();
     }
 
-    // Debounced Search Engine for High Concurrency
     applyJobFilters() {
         clearTimeout(this.searchDebounceTimer);
         this.searchDebounceTimer = setTimeout(() => {
@@ -970,7 +962,7 @@ class RozgaarMitraApp {
         this.renderSkillsTagSelector();
     }
 
-    // EMAIL OTP FLOW
+    // EMAIL OTP FLOW ONLY FOR CANDIDATES
     sendEmailOtpCode() {
         const email = document.getElementById('otpEmailInput').value;
         if (!email || !email.includes('@')) {
@@ -1010,64 +1002,6 @@ class RozgaarMitraApp {
         this.updateUserUI();
         this.closeModal('authModal');
         alert(`Email OTP Verification Successful! Logged in as ${email}.`);
-    }
-
-    // MOBILE OTP FLOW
-    sendOtpCode() {
-        const mob = document.getElementById('otpMobile').value;
-        if (!mob || mob.length < 10) {
-            alert('Please enter a valid 10-digit mobile number!');
-            return;
-        }
-
-        this.generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        document.getElementById('otpCodeGroup').classList.remove('hidden');
-        alert(`🔒 Mobile SMS OTP Sent to +91 ${mob}\n\nYour 6-Digit Verification OTP is: ${this.generatedOtp}`);
-    }
-
-    handleOtpLogin(event) {
-        event.preventDefault();
-        const mob = document.getElementById('otpMobile').value;
-        const code = document.getElementById('otpInputCode').value;
-
-        if (!this.generatedOtp) {
-            alert('Please click "Get OTP" first to receive your verification code!');
-            return;
-        }
-
-        if (code !== this.generatedOtp) {
-            alert('Incorrect OTP code! Please enter the exact 6-digit OTP sent to your mobile.');
-            return;
-        }
-
-        let u = this.candidates.find(c => c.mobile.includes(mob));
-        if (!u) {
-            u = { id: 'cand-' + Date.now(), name: 'Candidate ' + mob.slice(-4), email: `candidate_${mob}@rozgaarmitra.com`, mobile: mob, qualification: '12th Pass', role: 'SEEKER', skills: ['MS Excel'] };
-            this.candidates.push(u);
-        }
-
-        this.currentUser = u;
-        this.setStorageItem('rm_current_user', JSON.stringify(u));
-        this.saveStateToStorage();
-        this.updateUserUI();
-        this.closeModal('authModal');
-        alert('Mobile OTP Verification Successful! Logged in.');
-    }
-
-    handleLogin(event) {
-        event.preventDefault();
-        const email = document.getElementById('loginEmail').value;
-        let u = this.candidates.find(c => c.email === email);
-        if (!u) {
-            u = { id: 'cand-' + Date.now(), name: email.split('@')[0], email, mobile: '+91 9876543210', qualification: 'Graduate', role: 'SEEKER', skills: ['Tally Prime', 'MS Excel'] };
-            this.candidates.push(u);
-        }
-        this.currentUser = u;
-        this.setStorageItem('rm_current_user', JSON.stringify(u));
-        this.saveStateToStorage();
-        this.updateUserUI();
-        this.closeModal('authModal');
-        alert(`Welcome back, ${u.name}!`);
     }
 
     handleRegister(event) {
@@ -1452,17 +1386,12 @@ class RozgaarMitraApp {
 
     switchAuthTab(tab) {
         document.getElementById('tabLoginEmailOtp')?.classList.remove('active');
-        document.getElementById('tabLoginOtp')?.classList.remove('active');
         document.getElementById('tabRegister')?.classList.remove('active');
 
         document.getElementById('formEmailOtpLogin')?.classList.add('hidden');
-        document.getElementById('formOtpLogin')?.classList.add('hidden');
         document.getElementById('formRegister')?.classList.add('hidden');
 
-        if (tab === 'otp') {
-            document.getElementById('tabLoginOtp')?.classList.add('active');
-            document.getElementById('formOtpLogin')?.classList.remove('hidden');
-        } else if (tab === 'register') {
+        if (tab === 'register') {
             document.getElementById('tabRegister')?.classList.add('active');
             document.getElementById('formRegister')?.classList.remove('hidden');
         } else {

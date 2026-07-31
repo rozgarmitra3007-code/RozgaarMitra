@@ -707,13 +707,12 @@
         </a>
     </nav>
 
-    <!-- Auth Modal (Candidates with Email OTP & Mobile OTP tabs) -->
+    <!-- Auth Modal (Candidates with Email OTP & Registration tabs) -->
     <div class="modal-backdrop hidden" id="authModal">
         <div class="modal-card">
             <button class="modal-close" onclick="app.closeModal('authModal')"><i class="fa-solid fa-xmark"></i></button>
             <div class="auth-tabs">
                 <button class="auth-tab active" id="tabLoginEmailOtp" onclick="app.switchAuthTab('email-otp')"><i class="fa-solid fa-envelope"></i> Email OTP</button>
-                <button class="auth-tab" id="tabLoginOtp" onclick="app.switchAuthTab('otp')"><i class="fa-solid fa-mobile-screen"></i> Mobile OTP</button>
                 <button class="auth-tab" id="tabRegister" onclick="app.switchAuthTab('register')"><i class="fa-solid fa-user-plus"></i> Register</button>
             </div>
 
@@ -731,22 +730,6 @@
                     <input type="text" id="otpEmailCode" class="form-control" placeholder="Enter 6-digit Email OTP" maxlength="6">
                 </div>
                 <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-shield-check"></i> Verify Email OTP & Login</button>
-            </form>
-
-            <!-- MOBILE OTP FORM -->
-            <form id="formOtpLogin" class="hidden" onsubmit="app.handleOtpLogin(event)">
-                <div class="mb-3">
-                    <label class="text-sm font-weight-bold">Mobile Number (+91)</label>
-                    <div style="display:flex; gap:0.5rem;">
-                        <input type="tel" id="otpMobile" class="form-control" placeholder="10-digit mobile number" required>
-                        <button type="button" class="btn btn-outline btn-sm" onclick="app.sendOtpCode()">Get OTP</button>
-                    </div>
-                </div>
-                <div class="mb-3 hidden" id="otpCodeGroup">
-                    <label class="text-sm font-weight-bold">Enter Verification OTP</label>
-                    <input type="text" id="otpInputCode" class="form-control" placeholder="Enter 6-digit OTP" maxlength="6">
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">Verify OTP & Login</button>
             </form>
 
             <!-- REGISTER FORM -->
@@ -774,7 +757,7 @@
         </div>
     </div>
 
-    <!-- FIX 1: SECURE 2FA ADMIN AUTHENTICATION MODAL (Email + Password + 2FA OTP) -->
+    <!-- SECURE 2FA ADMIN AUTHENTICATION MODAL (Email + Password + 2FA OTP) -->
     <div class="modal-backdrop hidden" id="adminAuthModal">
         <div class="modal-card" style="max-width:420px;">
             <button class="modal-close" onclick="app.closeModal('adminAuthModal')"><i class="fa-solid fa-xmark"></i></button>
@@ -788,7 +771,7 @@
             <form onsubmit="app.verifyAdminPasscode(event)">
                 <div class="mb-3">
                     <label class="text-sm font-weight-bold">Admin Email Address *</label>
-                    <input type="email" id="adminEmailInput" class="form-control" required placeholder="admin@rozgaarmitra.com">
+                    <input type="email" id="adminEmailInput" class="form-control" required placeholder="support@rozgaarmitra.com">
                 </div>
                 <div class="mb-3">
                     <label class="text-sm font-weight-bold">Admin Account Password *</label>
