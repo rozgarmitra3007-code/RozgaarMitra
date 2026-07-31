@@ -160,17 +160,17 @@ class RozgaarMitraApp {
             this.currentRole = 'ADMIN';
             this.closeModal('adminAuthModal');
             this.updateUserUI();
-            alert('🔒 Secret Admin Access Granted!\n\nAll admin management options unlocked.');
+            alert('🔒 Secret Access Granted!\n\nAll management options unlocked.');
             this.navigateTo('admin-dashboard');
         } else {
-            alert('Incorrect Admin Passcode! Access Denied.');
+            alert('Incorrect Passcode! Access Denied.');
         }
     }
 
     exitAdminMode() {
         this.currentRole = 'SEEKER';
         this.updateUserUI();
-        alert('Exited Admin Mode. Returned to Candidate View.');
+        alert('Returned to Candidate View.');
         this.navigateTo('home');
     }
 
@@ -225,7 +225,7 @@ class RozgaarMitraApp {
                 <div class="card p-5 text-center text-muted full-width">
                     <i class="fa-solid fa-briefcase fa-2x mb-3 text-primary d-block"></i>
                     <h3>No Job Vacancies Available Yet</h3>
-                    <p class="mt-1">Admin can post direct private sector hiring vacancies.</p>
+                    <p class="mt-1">Verified private sector hiring vacancies will appear here.</p>
                 </div>
             `;
             return;
@@ -818,7 +818,7 @@ class RozgaarMitraApp {
                     <td>
                         <button class="btn btn-outline btn-sm mr-1" onclick="app.editJob('${j.id}')" title="Edit Job"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
                         <button class="btn btn-${isClosed ? 'success' : 'warning'} btn-sm mr-1" onclick="app.toggleHiringClosed('${j.id}')">
-                            <i class="fa-solid fa-${isClosed ? 'lock-open' : 'lock'}"></i> ${isClosed ? 'Re-open' : 'Close Vacancy'}
+                            <i class="fa-solid fa-lock-open" : 'lock'}></i> ${isClosed ? 'Re-open' : 'Close Vacancy'}
                         </button>
                         <button class="btn btn-outline btn-sm text-danger" onclick="app.deleteJob('${j.id}')" title="Delete Job"><i class="fa-solid fa-trash"></i> Delete</button>
                     </td>
