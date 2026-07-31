@@ -1,0 +1,24 @@
+{
+  "name": "Rozgaar Mitra - Private Job Portal",
+  "short_name": "RozgaarMitra",
+  "description": "India's trusted private sector job portal & consultancy platform",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#002b66",
+  "theme_color": "#002b66",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

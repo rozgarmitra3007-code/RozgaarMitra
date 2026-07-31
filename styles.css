@@ -800,4 +800,60 @@ a:hover {
         box-shadow: var(--shadow-lg);
     }
     .nav-menu.open { display: flex; }
+    .form-grid { grid-template-columns: 1fr; }
+    .full-width { grid-column: span 1; }
+    .footer-grid { grid-template-columns: 1fr; }
+}
+
+/* MOBILE PWA NATIVE BOTTOM APP BAR (APK LIKE EXPERIENCE) */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background-color: #002b66;
+    color: #ffffff;
+    z-index: 1500;
+    box-shadow: 0 -3px 12px rgba(0,0,0,0.18);
+    justify-content: space-around;
+    align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.15);
+}
+
+.mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 0.72rem;
+    font-weight: 500;
+    gap: 2px;
+    flex: 1;
+    height: 100%;
+    transition: color 0.18s ease;
+}
+
+.mobile-nav-item i {
+    font-size: 1.2rem;
+}
+
+.mobile-nav-item.active, .mobile-nav-item:active {
+    color: #f97316 !important;
+}
+
+@media (max-width: 768px) {
+    .mobile-bottom-nav {
+        display: flex;
+    }
+    body {
+        padding-bottom: 60px; /* Prevent footer clipping on smartphones */
+    }
+}
+
+    }
+    .nav-menu.open { display: flex; }
 }

@@ -2,9 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Rozgaar Mitra | Private Sector Job Portal & Consultancy</title>
     <meta name="description" content="Rozgaar Mitra (rozgaarmitra.com) - Your Career, Our Mission. India's trusted private job portal & consultancy. Privacy Policy, Terms & Conditions, and Refund Policy.">
+    
+    <!-- PWA & Mobile Web App Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#002b66">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RozgaarMitra">
+    <link rel="apple-touch-icon" href="logo.png">
+
     <link rel="icon" type="image/png" href="logo.png">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -636,6 +645,30 @@
         </div>
     </footer>
 
+    <!-- Native Mobile Bottom Tab Bar (Visible on Mobile/Smartphones) -->
+    <nav class="mobile-bottom-nav">
+        <a href="#" class="mobile-nav-item active" onclick="app.navigateTo('home')">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </a>
+        <a href="#" class="mobile-nav-item" onclick="app.navigateTo('jobs')">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span>Jobs</span>
+        </a>
+        <a href="#" class="mobile-nav-item" onclick="app.navigateTo('profile')">
+            <i class="fa-solid fa-user-pen"></i>
+            <span>Profile</span>
+        </a>
+        <a href="#" class="mobile-nav-item" onclick="app.navigateTo('applications')">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>Apps</span>
+        </a>
+        <a href="#" class="mobile-nav-item" onclick="app.navigateTo('saved')">
+            <i class="fa-solid fa-bookmark"></i>
+            <span>Saved</span>
+        </a>
+    </nav>
+
     <!-- Auth Modal (Candidates) -->
     <div class="modal-backdrop hidden" id="authModal">
         <div class="modal-card">
@@ -792,5 +825,16 @@
 
     <!-- JS Core Engine -->
     <script src="app.js"></script>
+    
+    <!-- Register PWA Service Worker for Mobile App Installation -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Rozgaar Mitra PWA Service Worker Registered!'))
+                    .catch(err => console.error('PWA Service Worker Error:', err));
+            });
+        }
+    </script>
 </body>
 </html>
