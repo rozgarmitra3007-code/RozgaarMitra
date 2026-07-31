@@ -1,5 +1,10 @@
 {
   "cleanUrls": true,
+  "rewrites": [
+    { "source": "/api/candidates", "destination": "/api/candidates.js" },
+    { "source": "/api/applications", "destination": "/api/applications.js" },
+    { "source": "/api/send-otp", "destination": "/api/send-otp.js" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
