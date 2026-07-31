@@ -1,9 +1,9 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - 100% PRODUCTION CORE ENGINE
  * 
- * DUPLICATE CHECK & STRICT REGISTRATION EMAIL VERIFICATION:
- * 1. Duplicate Account Prevention: Prevents re-registration if Email or Mobile already exists in database.
- * 2. Registration Email Verification: Sends 6-digit Email OTP before registration completes.
+ * SECURITY AUDIT FIX:
+ * Removed ALL screen alert() popups showing the OTP code values!
+ * OTPs are dispatched silently via Vercel Serverless Function (/api/send-otp) to the user's real email inbox.
  */
 
 class RozgaarMitraApp {
@@ -520,7 +520,17 @@ class RozgaarMitraApp {
         this.generatedAdmin2faOtp = Math.floor(100000 + Math.random() * 900000).toString();
         this.admin2faExpiryTime = Date.now() + (5 * 60 * 1000);
         document.getElementById('admin2faGroup').classList.remove('hidden');
-        alert(`🔒 ADMIN 2-FACTOR AUTHENTICATION (2FA)\n\nCredentials Verified for ${email}!\n\nYour 6-Digit Admin 2FA Security OTP is: ${this.generatedAdmin2faOtp}\n\n(Valid for 5 minutes)`);
+
+        // Silent dispatch to email gateway without exposing OTP on screen
+        try {
+            fetch('/api/send-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, otp: this.generatedAdmin2faOtp })
+            }).catch(e => console.warn('2FA Email dispatch notice:', e));
+        } catch(e){}
+
+        alert(`🔒 Admin 2FA Security Code Sent!\n\nA 6-digit 2FA verification OTP has been sent for ${email}.\n\nPlease check your email inbox (and spam folder) to unlock the Admin Panel.`);
     }
 
     verifyAdminPasscode(event) {
@@ -557,7 +567,7 @@ class RozgaarMitraApp {
             alert('🔒 Admin 2FA Authentication Successful!\n\nAll management options unlocked.');
             this.navigateTo('admin-dashboard');
         } else {
-            alert('Incorrect 2FA Security OTP Code! Please enter the exact 6-digit OTP code.');
+            alert('Incorrect 2FA Security OTP Code! Please enter the exact 6-digit OTP code sent to your email.');
         }
     }
 
@@ -969,7 +979,7 @@ class RozgaarMitraApp {
         this.renderSkillsTagSelector();
     }
 
-    // EMAIL OTP FLOW FOR LOGIN
+    // EMAIL OTP FLOW FOR LOGIN (SILENT EMAIL DISPATCH WITHOUT EXPOSING OTP ON SCREEN)
     async sendEmailOtpCode() {
         const email = document.getElementById('otpEmailInput').value;
         if (!email || !email.includes('@')) {
@@ -989,7 +999,7 @@ class RozgaarMitraApp {
             }).catch(e => console.warn('Email dispatch notice:', e));
         } catch(e){}
 
-        alert(`📧 Email Verification OTP Sent to: ${email}\n\nYour 6-Digit Email Verification OTP is: ${this.generatedEmailOtp}\n\n(Valid for 5 minutes only)`);
+        alert(`📧 Verification OTP Code Sent!\n\nA 6-digit verification code has been dispatched to ${email}.\n\nPlease check your email inbox (and spam folder) to complete login.`);
     }
 
     handleEmailOtpLogin(event) {
@@ -1029,7 +1039,7 @@ class RozgaarMitraApp {
         alert(`Email OTP Verification Successful! Logged in as ${email}.`);
     }
 
-    // REGISTRATION EMAIL OTP & DUPLICATE ACCOUNT PREVENTION
+    // REGISTRATION EMAIL OTP & DUPLICATE ACCOUNT PREVENTION (SILENT EMAIL DISPATCH)
     async sendRegEmailOtpCode() {
         const email = document.getElementById('regEmail').value;
         const mobile = document.getElementById('regMobile').value;
@@ -1039,7 +1049,6 @@ class RozgaarMitraApp {
             return;
         }
 
-        // DUPLICATE ACCOUNT CHECK BEFORE DISPATCHING OTP
         const existingEmail = this.candidates.find(c => c.email.toLowerCase() === email.toLowerCase());
         if (existingEmail) {
             alert(`🚨 Account Already Registered!\n\nAn account with the email "${email}" ALREADY exists.\n\nPlease use "Email OTP Login" to sign in to your candidate account!`);
@@ -1069,7 +1078,7 @@ class RozgaarMitraApp {
             }).catch(e => console.warn('Email dispatch notice:', e));
         } catch(e){}
 
-        alert(`📧 Registration Email Verification OTP Sent to: ${email}\n\nYour 6-Digit Email Verification OTP is: ${this.generatedRegEmailOtp}\n\n(Valid for 5 minutes only)`);
+        alert(`📧 Registration Verification Code Sent!\n\nA 6-digit registration verification code has been dispatched to ${email}.\n\nPlease check your email inbox (and spam folder) to complete registration.`);
     }
 
     handleRegister(event) {
@@ -1079,7 +1088,6 @@ class RozgaarMitraApp {
         const mobile = document.getElementById('regMobile').value;
         const otpCode = document.getElementById('regOtpCode').value;
 
-        // 1. STRICT DUPLICATE ACCOUNT CHECK
         const existingEmail = this.candidates.find(c => c.email.toLowerCase() === email.toLowerCase());
         if (existingEmail) {
             alert(`🚨 Account Already Registered!\n\nAn account with the email "${email}" ALREADY exists.\n\nPlease use "Email OTP Login" to sign in!`);
@@ -1095,7 +1103,6 @@ class RozgaarMitraApp {
             return;
         }
 
-        // 2. STRICT REGISTRATION EMAIL OTP VERIFICATION
         if (!this.generatedRegEmailOtp) {
             alert('Please click "Verify Email" first to receive your 6-digit registration OTP code!');
             return;
@@ -1112,7 +1119,6 @@ class RozgaarMitraApp {
             return;
         }
 
-        // OTP Verified -> Invalidate single-use code and create candidate profile
         this.generatedRegEmailOtp = null;
 
         const u = { 
