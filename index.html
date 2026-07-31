@@ -307,66 +307,111 @@
         </section>
 
 
-        <!-- VIEW 4: PROFILE BUILDER WITH PHOTO & RESUME UPLOAD -->
+        <!-- VIEW 4: REDESIGNED MY CANDIDATE PROFILE PAGE -->
         <section id="view-profile" class="page-view">
             <div class="page-header bg-surface">
                 <div class="container">
                     <h1>My Candidate Profile</h1>
-                    <p>Upload candidate photo, resume document, education, and skills</p>
+                    <p>Build your complete professional profile to get matched with verified private jobs</p>
                 </div>
             </div>
 
-            <div class="container section-padding">
-                <form id="profileForm" onsubmit="app.saveProfile(event)" class="profile-layout" style="max-width:800px; margin:0 auto;">
-                    
-                    <!-- Candidate Photo Upload Card -->
-                    <div class="card p-4 mb-4 text-center">
-                        <h3><i class="fa-solid fa-camera text-primary"></i> Candidate Profile Photo</h3>
-                        <p class="text-sm text-secondary mb-3">Upload your professional passport-style candidate photo</p>
-                        <div style="display:flex; flex-direction:column; align-items:center; gap:0.75rem;">
-                            <img id="profPhotoPreview" class="hidden" src="" alt="Candidate Photo" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid #002b66; box-shadow:var(--shadow-md);">
-                            <input type="file" id="profPhotoInput" accept="image/*" class="form-control" style="max-width:320px;" onchange="app.handlePhotoUpload(event)">
+            <div class="container section-padding" style="max-width:880px;">
+                
+                <!-- PROFILE COMPLETION PROGRESS CARD -->
+                <div class="card p-4 mb-4" style="background: linear-gradient(135deg, #002b66 0%, #1e40af 100%); color:#ffffff; border-radius:12px; box-shadow:var(--shadow-md);">
+                    <div class="flex-between mb-2">
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            <div style="width:42px; height:42px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </div>
+                            <div>
+                                <h3 style="color:#ffffff; margin:0; font-size:1.15rem;">Profile Completion Status</h3>
+                                <span style="font-size:0.85rem; color:#cbd5e1;" id="profCompletionSub">Complete all sections to rank higher in recruiter searches</span>
+                            </div>
                         </div>
+                        <span style="font-size:1.6rem; font-weight:800; color:#38bdf8;" id="profCompletionText">0%</span>
                     </div>
 
-                    <div class="card p-4 mb-4">
-                        <h3><i class="fa-solid fa-user"></i> Personal Contact Details</h3>
-                        <div class="form-grid mt-3">
+                    <div style="width:100%; height:10px; background:rgba(255,255,255,0.2); border-radius:5px; overflow:hidden; margin-top:0.75rem;">
+                        <div id="profCompletionBar" style="width:0%; height:100%; background:#38bdf8; transition:width 0.4s ease; border-radius:5px;"></div>
+                    </div>
+                </div>
+
+                <form id="profileForm" onsubmit="app.saveProfile(event)" class="profile-layout">
+                    
+                    <!-- SECTION 1: PERSONAL DETAILS CARD -->
+                    <div class="card p-4 mb-4" style="border-radius:12px;">
+                        <h3 class="mb-1" style="font-size:1.15rem; color:var(--text-primary);"><i class="fa-solid fa-id-card text-primary"></i> 1. Personal Details</h3>
+                        <p class="text-sm text-secondary mb-3">Basic contact and identification details</p>
+                        
+                        <div class="form-grid">
                             <div class="form-group">
                                 <label>Full Name *</label>
-                                <input type="text" id="profName" class="form-control" required placeholder="Enter full name">
+                                <input type="text" id="profName" class="form-control" required placeholder="Enter full name" oninput="app.updateProfileCompletion()">
                             </div>
                             <div class="form-group">
                                 <label>Email Address *</label>
-                                <input type="email" id="profEmail" class="form-control" required placeholder="Enter email address">
+                                <input type="email" id="profEmail" class="form-control" required placeholder="Enter email address" oninput="app.updateProfileCompletion()">
                             </div>
                             <div class="form-group">
                                 <label>Mobile Number *</label>
-                                <input type="tel" id="profMobile" class="form-control" required placeholder="Enter 10-digit mobile number">
+                                <input type="tel" id="profMobile" class="form-control" required placeholder="10-digit mobile number" oninput="app.updateProfileCompletion()">
                             </div>
                             <div class="form-group">
-                                <label>Current Location *</label>
-                                <input type="text" id="profLocation" class="form-control" required placeholder="Delhi NCR, Lucknow, Patna">
+                                <label>Current City / Location *</label>
+                                <select id="profLocation" class="form-control" required onchange="app.updateProfileCompletion()">
+                                    <option value="">Select Current City</option>
+                                    <option value="Delhi NCR">Delhi NCR (Noida, Gurgaon, Faridabad)</option>
+                                    <option value="Lucknow">Lucknow (UP)</option>
+                                    <option value="Kanpur">Kanpur (UP)</option>
+                                    <option value="Prayagraj">Prayagraj (UP)</option>
+                                    <option value="Varanasi">Varanasi (UP)</option>
+                                    <option value="Patna">Patna (Bihar)</option>
+                                    <option value="Jaipur">Jaipur (Rajasthan)</option>
+                                    <option value="Mumbai">Mumbai / Pune</option>
+                                    <option value="Bengaluru">Bengaluru / Hyderabad</option>
+                                    <option value="Work From Home">Work From Home / Remote</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Date of Birth *</label>
+                                <input type="date" id="profDob" class="form-control" required onchange="app.updateProfileCompletion()">
+                            </div>
+                            <div class="form-group">
+                                <label>Gender (Optional)</label>
+                                <select id="profGender" class="form-control" onchange="app.updateProfileCompletion()">
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                    <option value="Prefer not to say">Prefer not to say</option>
+                                </select>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card p-4 mb-4">
-                        <h3><i class="fa-solid fa-graduation-cap"></i> Education & Experience</h3>
-                        <div class="form-grid mt-3">
+                    <!-- SECTION 2: EDUCATION & EXPERIENCE CARD -->
+                    <div class="card p-4 mb-4" style="border-radius:12px;">
+                        <h3 class="mb-1" style="font-size:1.15rem; color:var(--text-primary);"><i class="fa-solid fa-graduation-cap text-primary"></i> 2. Education & Experience</h3>
+                        <p class="text-sm text-secondary mb-3">Academic qualifications and career history</p>
+
+                        <div class="form-grid">
                             <div class="form-group">
-                                <label>Highest Qualification *</label>
-                                <select id="profQualification" class="form-control" required>
-                                    <option value="10th Pass (High School)">10th Pass</option>
-                                    <option value="12th Pass (Intermediate)">12th Pass</option>
+                                <label>Highest Educational Qualification *</label>
+                                <select id="profQualification" class="form-control" required onchange="app.updateProfileCompletion()">
+                                    <option value="">Select Qualification</option>
+                                    <option value="10th Pass (High School)">10th Pass (High School)</option>
+                                    <option value="12th Pass (Intermediate)">12th Pass (Intermediate)</option>
                                     <option value="Diploma / ITI">Diploma / ITI</option>
-                                    <option value="Graduate (BA, B.Com, B.Sc, B.Tech, etc.)">Graduate</option>
-                                    <option value="Post Graduate (MBA, M.Com, M.Tech, etc.)">Post Graduate</option>
+                                    <option value="Graduate (BA, B.Com, B.Sc, B.Tech, etc.)">Graduate (BA, B.Com, B.Sc, B.Tech, etc.)</option>
+                                    <option value="Post Graduate (MBA, M.Com, M.Tech, etc.)">Post Graduate (MBA, M.Com, M.Tech, etc.)</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Work Experience *</label>
-                                <select id="profExperience" class="form-control" required>
+                                <label>Total Work Experience *</label>
+                                <select id="profExperience" class="form-control" required onchange="app.updateProfileCompletion()">
+                                    <option value="">Select Experience</option>
                                     <option value="Fresher">Fresher (0 Years)</option>
                                     <option value="1-2 Years">1 - 2 Years</option>
                                     <option value="3-5 Years">3 - 5 Years</option>
@@ -376,21 +421,115 @@
                         </div>
                     </div>
 
-                    <!-- Resume Document Upload Card -->
-                    <div class="card p-4 mb-4">
-                        <h3><i class="fa-solid fa-file-pdf text-danger"></i> Upload Resume / CV Document</h3>
-                        <p class="text-sm text-secondary mb-3">Upload PDF or Word document for recruiter review</p>
-                        <input type="file" id="profResumeInput" accept=".pdf,.doc,.docx" class="form-control" onchange="app.handleResumeUpload(event)">
-                        <span id="profResumeName" class="text-sm font-weight-bold text-success mt-2 d-block"></span>
+                    <!-- SECTION 3: JOB PREFERENCES CARD -->
+                    <div class="card p-4 mb-4" style="border-radius:12px;">
+                        <h3 class="mb-1" style="font-size:1.15rem; color:var(--text-primary);"><i class="fa-solid fa-bullseye text-primary"></i> 3. Job Preferences</h3>
+                        <p class="text-sm text-secondary mb-3">Set your target job roles, preferred city, and expected salary</p>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Preferred Job Category *</label>
+                                <select id="profPrefCategory" class="form-control" required onchange="app.updateProfileCompletion()">
+                                    <option value="">Select Preferred Category</option>
+                                    <option value="Accounts & Finance">Accounts & Finance</option>
+                                    <option value="Sales & Marketing">Sales & Marketing</option>
+                                    <option value="Telecalling & Customer Support">Telecalling & Support</option>
+                                    <option value="Back Office & Data Entry">Back Office & Data Entry</option>
+                                    <option value="IT & Software Development">IT & Software Development</option>
+                                    <option value="Operations & Logistics">Operations & Logistics</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Preferred Working City *</label>
+                                <select id="profPrefCity" class="form-control" required onchange="app.updateProfileCompletion()">
+                                    <option value="">Select Preferred City</option>
+                                    <option value="Delhi NCR">Delhi NCR (Noida, Gurgaon)</option>
+                                    <option value="Lucknow">Lucknow (UP)</option>
+                                    <option value="Kanpur">Kanpur (UP)</option>
+                                    <option value="Patna">Patna (Bihar)</option>
+                                    <option value="Jaipur">Jaipur (Rajasthan)</option>
+                                    <option value="Mumbai">Mumbai / Pune</option>
+                                    <option value="Bengaluru">Bengaluru</option>
+                                    <option value="Work From Home">Work From Home / Remote</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Min Expected Salary (₹ / month) *</label>
+                                <input type="number" id="profSalMin" class="form-control" required placeholder="e.g. 15000" min="5000" step="1000" oninput="app.updateProfileCompletion()">
+                            </div>
+                            <div class="form-group">
+                                <label>Max Expected Salary (₹ / month) *</label>
+                                <input type="number" id="profSalMax" class="form-control" required placeholder="e.g. 35000" min="5000" step="1000" oninput="app.updateProfileCompletion()">
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="card p-4 mb-4">
-                        <h3><i class="fa-solid fa-tags"></i> Skills Tag Input</h3>
-                        <div class="skills-selector mt-3" id="skillsTagContainer"></div>
+                    <!-- SECTION 4: SEARCHABLE SKILLS SELECTOR & CHIP TAGS -->
+                    <div class="card p-4 mb-4" style="border-radius:12px;">
+                        <h3 class="mb-1" style="font-size:1.15rem; color:var(--text-primary);"><i class="fa-solid fa-tags text-primary"></i> 4. Skills & Competencies</h3>
+                        <p class="text-sm text-secondary mb-3">Search or type custom skills to add to your candidate profile</p>
+
+                        <!-- Searchable Tag Input Box -->
+                        <div class="mb-3">
+                            <div style="display:flex; gap:0.5rem;">
+                                <input type="text" id="skillSearchInput" class="form-control" placeholder="Search skills (e.g. Tally, Excel, Python) or type custom skill..." onkeyup="app.handleSkillSearch(event)">
+                                <button type="button" class="btn btn-outline btn-sm" onclick="app.addCustomSkillFromInput()"><i class="fa-solid fa-plus"></i> Add Skill</button>
+                            </div>
+                        </div>
+
+                        <!-- Selected Skill Chips -->
+                        <div class="mb-3">
+                            <label class="text-sm font-weight-bold text-secondary mb-2 d-block">Selected Skills:</label>
+                            <div class="selected-skill-chips-container" id="selectedSkillsContainer" style="display:flex; flex-wrap:wrap; gap:0.5rem; min-height:42px; padding:0.6rem; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:8px;"></div>
+                        </div>
+
+                        <!-- Available Skill Suggestions -->
+                        <div>
+                            <label class="text-sm font-weight-bold text-secondary mb-2 d-block">Popular Skill Suggestions (Click to Add):</label>
+                            <div class="skills-selector" id="skillsTagContainer"></div>
+                        </div>
                     </div>
 
-                    <div class="text-right">
-                        <button type="submit" class="btn btn-primary btn-lg"><i class="fa-solid fa-floppy-disk"></i> Save Candidate Profile</button>
+                    <!-- SECTION 5: PHOTO & RESUME UPLOADS CARD -->
+                    <div class="card p-4 mb-4" style="border-radius:12px;">
+                        <h3 class="mb-1" style="font-size:1.15rem; color:var(--text-primary);"><i class="fa-solid fa-cloud-arrow-up text-primary"></i> 5. Photo & Resume Documents</h3>
+                        <p class="text-sm text-secondary mb-3">Upload candidate passport photo and PDF/Word resume</p>
+
+                        <div class="form-grid">
+                            <!-- Candidate Photo Card -->
+                            <div style="border:1px dashed var(--border-color); padding:1.25rem; border-radius:10px; text-align:center; background:var(--bg-surface);">
+                                <h4 class="mb-2" style="font-size:1rem;"><i class="fa-solid fa-camera text-primary"></i> Profile Photo</h4>
+                                <div style="display:flex; flex-direction:column; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
+                                    <img id="profPhotoPreview" class="hidden" src="" alt="Candidate Photo" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid #002b66; box-shadow:var(--shadow-md);">
+                                    <div id="profPhotoPlaceholder" style="width:80px; height:80px; border-radius:50%; background:#e2e8f0; color:#64748b; display:flex; align-items:center; justify-content:center; font-size:2rem;">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                </div>
+                                <input type="file" id="profPhotoInput" accept="image/*" class="form-control" style="font-size:0.85rem;" onchange="app.handlePhotoUpload(event)">
+                            </div>
+
+                            <!-- Resume Document Card -->
+                            <div style="border:1px dashed var(--border-color); padding:1.25rem; border-radius:10px; background:var(--bg-surface);">
+                                <h4 class="mb-2" style="font-size:1rem;"><i class="fa-solid fa-file-pdf text-danger"></i> Resume Document</h4>
+                                <input type="file" id="profResumeInput" accept=".pdf,.doc,.docx" class="form-control" style="font-size:0.85rem;" onchange="app.handleResumeUpload(event)">
+                                
+                                <div id="profResumeMetadataBox" class="hidden mt-3 p-3" style="background:#ffffff; border:1px solid #cbd5e1; border-radius:8px;">
+                                    <div class="flex-between">
+                                        <div>
+                                            <span class="text-sm font-weight-bold text-success d-block" id="profResumeFileName"><i class="fa-solid fa-file-pdf text-danger"></i> resume.pdf</span>
+                                            <small class="text-muted" id="profResumeMetaDetails">Uploaded on 2026-07-31 • 145 KB</small>
+                                        </div>
+                                        <button type="button" class="btn btn-outline btn-sm text-primary" onclick="document.getElementById('profResumeInput').click()"><i class="fa-solid fa-arrow-rotate-right"></i> Replace</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ACTION BUTTONS: SAVE DRAFT & SAVE PROFILE -->
+                    <div class="flex-between pt-2">
+                        <button type="button" class="btn btn-outline btn-lg" onclick="app.saveProfileAsDraft()"><i class="fa-solid fa-floppy-disk"></i> Save as Draft</button>
+                        <button type="submit" class="btn btn-primary btn-lg"><i class="fa-solid fa-circle-check"></i> Save & Activate Profile</button>
                     </div>
                 </form>
             </div>
@@ -707,7 +846,7 @@
         </a>
     </nav>
 
-    <!-- Auth Modal (Candidates with Email OTP & Verified Registration tabs) -->
+    <!-- Auth Modal -->
     <div class="modal-backdrop hidden" id="authModal">
         <div class="modal-card">
             <button class="modal-close" onclick="app.closeModal('authModal')"><i class="fa-solid fa-xmark"></i></button>
@@ -764,7 +903,7 @@
         </div>
     </div>
 
-    <!-- SECURE 2FA ADMIN AUTHENTICATION MODAL (Email + Password + 2FA OTP) -->
+    <!-- SECURE 2FA ADMIN AUTHENTICATION MODAL -->
     <div class="modal-backdrop hidden" id="adminAuthModal">
         <div class="modal-card" style="max-width:420px;">
             <button class="modal-close" onclick="app.closeModal('adminAuthModal')"><i class="fa-solid fa-xmark"></i></button>

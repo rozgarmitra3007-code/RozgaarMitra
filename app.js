@@ -1,9 +1,12 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - 100% PRODUCTION CORE ENGINE
  * 
- * SECURITY AUDIT FIX:
- * Removed ALL screen alert() popups showing the OTP code values!
- * OTPs are dispatched silently via Vercel Serverless Function (/api/send-otp) to the user's real email inbox.
+ * CANDIDATE PROFILE FORM REDESIGN:
+ * 1. Profile completion percentage progress bar (0% to 100%).
+ * 2. New fields: Preferred category, Preferred city, Expected min/max salary, DOB, Gender.
+ * 3. Searchable skill tags + custom skill adder + removable chips.
+ * 4. Photo preview & Resume file metadata card with Replace option.
+ * 5. Save as Draft & Save & Activate Profile options.
  */
 
 class RozgaarMitraApp {
@@ -23,7 +26,11 @@ class RozgaarMitraApp {
         
         this.candidatePhotoDataUrl = null;
         this.candidateResumeFileName = null;
+        this.candidateResumeFileSize = null;
+        this.candidateResumeUploadDate = null;
         
+        this.selectedSkills = ['Tally Prime', 'MS Excel'];
+
         // Admin Security Config
         this.adminPasswordSecret = 'Admin@75100'; // Secret Official Admin Password
         this.failedAdminAttempts = 0;
@@ -39,7 +46,7 @@ class RozgaarMitraApp {
             'Hindi Typing', 'Customer Support', 'Telecalling', 'Field Sales', 'B2B Sales',
             'Store Operations', 'Inventory Management', 'Driving (LMV/HMV)', 'Photoshop',
             'Web Development', 'Digital Marketing', 'Front Office Management', 'Billing & ERP',
-            'HR Recruiting', 'CorelDraw', 'AutoCAD'
+            'HR Recruiting', 'CorelDraw', 'AutoCAD', 'Python', 'Java', 'SQL'
         ];
 
         this.init();
@@ -64,6 +71,11 @@ class RozgaarMitraApp {
                 this.currentUser = JSON.parse(savedUser);
                 this.candidatePhotoDataUrl = this.currentUser.photoUrl || null;
                 this.candidateResumeFileName = this.currentUser.resumeFileName || null;
+                this.candidateResumeFileSize = this.currentUser.resumeFileSize || null;
+                this.candidateResumeUploadDate = this.currentUser.resumeUploadDate || null;
+                if (this.currentUser.skills && Array.isArray(this.currentUser.skills)) {
+                    this.selectedSkills = [...this.currentUser.skills];
+                }
                 this.loadProfileIntoForm();
             } catch (e) {
                 console.warn('Session load notice:', e);
@@ -473,6 +485,7 @@ class RozgaarMitraApp {
         if (pageId === 'admin-dashboard') this.renderAdminDashboard();
         if (pageId === 'admin-jobs') this.renderAdminJobsTable();
         if (pageId === 'admin-candidates') this.filterCandidateDatabase();
+        if (pageId === 'profile') this.updateProfileCompletion();
     }
 
     checkAdminHash() {
@@ -521,7 +534,6 @@ class RozgaarMitraApp {
         this.admin2faExpiryTime = Date.now() + (5 * 60 * 1000);
         document.getElementById('admin2faGroup').classList.remove('hidden');
 
-        // Silent dispatch to email gateway without exposing OTP on screen
         try {
             fetch('/api/send-otp', {
                 method: 'POST',
@@ -890,6 +902,41 @@ class RozgaarMitraApp {
         this.navigateTo('applications');
     }
 
+    // PROFILE COMPLETION CALCULATOR (0% TO 100%)
+    updateProfileCompletion() {
+        const fields = [
+            document.getElementById('profName')?.value,
+            document.getElementById('profEmail')?.value,
+            document.getElementById('profMobile')?.value,
+            document.getElementById('profLocation')?.value,
+            document.getElementById('profDob')?.value,
+            document.getElementById('profQualification')?.value,
+            document.getElementById('profExperience')?.value,
+            document.getElementById('profPrefCategory')?.value,
+            document.getElementById('profPrefCity')?.value,
+            document.getElementById('profSalMin')?.value,
+            document.getElementById('profSalMax')?.value,
+            (this.selectedSkills && this.selectedSkills.length > 0) ? 'skills' : '',
+            this.candidatePhotoDataUrl ? 'photo' : '',
+            this.candidateResumeFileName ? 'resume' : ''
+        ];
+
+        const filledCount = fields.filter(f => f && String(f).trim().length > 0).length;
+        const totalFields = fields.length; // 14 items
+        const percentage = Math.round((filledCount / totalFields) * 100);
+
+        const textEl = document.getElementById('profCompletionText');
+        const barEl = document.getElementById('profCompletionBar');
+        const subEl = document.getElementById('profCompletionSub');
+
+        if (textEl) textEl.textContent = `${percentage}%`;
+        if (barEl) barEl.style.width = `${percentage}%`;
+        if (subEl) {
+            if (percentage === 100) subEl.textContent = '🎉 Profile 100% Complete! Top priority ranking in candidate database.';
+            else subEl.textContent = `Completed ${filledCount} of ${totalFields} fields (${100 - percentage}% remaining)`;
+        }
+    }
+
     handlePhotoUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -903,10 +950,13 @@ class RozgaarMitraApp {
         reader.onload = (e) => {
             this.candidatePhotoDataUrl = e.target.result;
             const preview = document.getElementById('profPhotoPreview');
+            const placeholder = document.getElementById('profPhotoPlaceholder');
             if (preview) {
                 preview.src = this.candidatePhotoDataUrl;
                 preview.classList.remove('hidden');
             }
+            if (placeholder) placeholder.classList.add('hidden');
+            this.updateProfileCompletion();
         };
         reader.readAsDataURL(file);
     }
@@ -916,10 +966,149 @@ class RozgaarMitraApp {
         if (!file) return;
 
         this.candidateResumeFileName = file.name;
-        const nameDisplay = document.getElementById('profResumeName');
-        if (nameDisplay) {
-            nameDisplay.innerHTML = `<i class="fa-solid fa-file-pdf text-danger"></i> Uploaded: <strong>${this.sanitizeHTML(file.name)}</strong> (${(file.size / 1024).toFixed(1)} KB)`;
+        this.candidateResumeFileSize = (file.size / 1024).toFixed(1) + ' KB';
+        this.candidateResumeUploadDate = new Date().toISOString().split('T')[0];
+
+        this.renderResumeMetadataCard();
+        this.updateProfileCompletion();
+    }
+
+    renderResumeMetadataCard() {
+        const box = document.getElementById('profResumeMetadataBox');
+        const nameEl = document.getElementById('profResumeFileName');
+        const metaEl = document.getElementById('profResumeMetaDetails');
+
+        if (this.candidateResumeFileName && box) {
+            box.classList.remove('hidden');
+            if (nameEl) nameEl.innerHTML = `<i class="fa-solid fa-file-pdf text-danger"></i> <strong>${this.sanitizeHTML(this.candidateResumeFileName)}</strong>`;
+            if (metaEl) metaEl.textContent = `Uploaded on ${this.candidateResumeUploadDate || 'Today'} • ${this.candidateResumeFileSize || 'PDF/Doc'}`;
         }
+    }
+
+    // SEARCHABLE SKILLS SELECTOR & CUSTOM CHIP TAG MANAGEMENT
+    handleSkillSearch(event) {
+        const query = event.target.value.toLowerCase().trim();
+        this.renderSkillsTagSelector(query);
+
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            this.addCustomSkillFromInput();
+        }
+    }
+
+    addCustomSkillFromInput() {
+        const input = document.getElementById('skillSearchInput');
+        if (!input) return;
+        const newSkill = input.value.trim();
+        if (!newSkill) return;
+
+        if (!this.selectedSkills.includes(newSkill)) {
+            this.selectedSkills.push(newSkill);
+            if (!this.availableSkills.includes(newSkill)) {
+                this.availableSkills.push(newSkill);
+            }
+        }
+        input.value = '';
+        this.renderSelectedSkillChips();
+        this.renderSkillsTagSelector();
+        this.updateProfileCompletion();
+    }
+
+    toggleSkillSelection(skill) {
+        const idx = this.selectedSkills.indexOf(skill);
+        if (idx >= 0) {
+            this.selectedSkills.splice(idx, 1);
+        } else {
+            this.selectedSkills.push(skill);
+        }
+        this.renderSelectedSkillChips();
+        this.renderSkillsTagSelector();
+        this.updateProfileCompletion();
+    }
+
+    removeSkillChip(skill) {
+        const idx = this.selectedSkills.indexOf(skill);
+        if (idx >= 0) {
+            this.selectedSkills.splice(idx, 1);
+            this.renderSelectedSkillChips();
+            this.renderSkillsTagSelector();
+            this.updateProfileCompletion();
+        }
+    }
+
+    renderSelectedSkillChips() {
+        const container = document.getElementById('selectedSkillsContainer');
+        if (!container) return;
+
+        if (this.selectedSkills.length === 0) {
+            container.innerHTML = `<span class="text-muted text-sm">No skills selected yet. Search below or type custom skill.</span>`;
+            return;
+        }
+
+        container.innerHTML = this.selectedSkills.map(s => `
+            <div style="display:inline-flex; align-items:center; gap:0.4rem; background:#002b66; color:#ffffff; padding:0.35rem 0.75rem; border-radius:20px; font-size:0.85rem; font-weight:600;">
+                <span>${this.sanitizeHTML(s)}</span>
+                <i class="fa-solid fa-xmark" style="cursor:pointer; opacity:0.8;" onclick="app.removeSkillChip('${this.sanitizeHTML(s)}')" title="Remove skill"></i>
+            </div>
+        `).join('');
+    }
+
+    renderSkillsTagSelector(query = '') {
+        const container = document.getElementById('skillsTagContainer');
+        if (!container) return;
+
+        const filtered = query ? 
+            this.availableSkills.filter(s => s.toLowerCase().includes(query)) : 
+            this.availableSkills;
+
+        if (filtered.length === 0) {
+            container.innerHTML = `<p class="text-muted text-sm">No matching skill found. Click "+ Add Skill" above to add it!</p>`;
+            return;
+        }
+
+        container.innerHTML = filtered.map(s => {
+            const isSel = this.selectedSkills.includes(s);
+            return `
+                <div class="skill-chip ${isSel ? 'selected' : ''}" onclick="app.toggleSkillSelection('${this.sanitizeHTML(s)}')">
+                    ${isSel ? '<i class="fa-solid fa-check"></i> ' : ''}${this.sanitizeHTML(s)}
+                </div>
+            `;
+        }).join('');
+    }
+
+    saveProfileAsDraft() {
+        const updated = {
+            id: this.currentUser ? this.currentUser.id : 'cand-' + Date.now(),
+            name: this.sanitizeHTML(document.getElementById('profName').value) || this.currentUser?.name || 'Draft Candidate',
+            email: this.sanitizeHTML(document.getElementById('profEmail').value) || this.currentUser?.email || '',
+            mobile: this.sanitizeHTML(document.getElementById('profMobile').value) || this.currentUser?.mobile || '',
+            location: this.sanitizeHTML(document.getElementById('profLocation').value) || '',
+            dob: document.getElementById('profDob').value || '',
+            gender: document.getElementById('profGender').value || '',
+            qualification: document.getElementById('profQualification').value || '12th Pass',
+            experienceYears: document.getElementById('profExperience').value || 'Fresher',
+            preferredCategory: document.getElementById('profPrefCategory').value || '',
+            preferredCity: document.getElementById('profPrefCity').value || '',
+            expectedSalaryMin: document.getElementById('profSalMin').value || '',
+            expectedSalaryMax: document.getElementById('profSalMax').value || '',
+            skills: [...this.selectedSkills],
+            photoUrl: this.candidatePhotoDataUrl || this.currentUser?.photoUrl || null,
+            resumeFileName: this.candidateResumeFileName || this.currentUser?.resumeFileName || null,
+            resumeFileSize: this.candidateResumeFileSize || this.currentUser?.resumeFileSize || null,
+            resumeUploadDate: this.candidateResumeUploadDate || this.currentUser?.resumeUploadDate || null,
+            isDraft: true
+        };
+
+        this.currentUser = updated;
+        this.setStorageItem('rm_current_user', JSON.stringify(updated));
+
+        const idx = this.candidates.findIndex(c => c.email === updated.email);
+        if (idx >= 0) this.candidates[idx] = updated;
+        else if (updated.email) this.candidates.push(updated);
+
+        this.saveStateToStorage();
+        this.updateUserUI();
+        alert('💾 Profile saved as DRAFT successfully!\n\nYou can return anytime to complete and activate your profile.');
     }
 
     saveProfile(event) {
@@ -930,11 +1119,20 @@ class RozgaarMitraApp {
             email: this.sanitizeHTML(document.getElementById('profEmail').value),
             mobile: this.sanitizeHTML(document.getElementById('profMobile').value),
             location: this.sanitizeHTML(document.getElementById('profLocation').value),
-            qualification: this.sanitizeHTML(document.getElementById('profQualification').value),
-            experienceYears: this.sanitizeHTML(document.getElementById('profExperience').value),
-            skills: this.getSelectedSkillsFromForm(),
+            dob: document.getElementById('profDob').value,
+            gender: document.getElementById('profGender').value,
+            qualification: document.getElementById('profQualification').value,
+            experienceYears: document.getElementById('profExperience').value,
+            preferredCategory: document.getElementById('profPrefCategory').value,
+            preferredCity: document.getElementById('profPrefCity').value,
+            expectedSalaryMin: document.getElementById('profSalMin').value,
+            expectedSalaryMax: document.getElementById('profSalMax').value,
+            skills: [...this.selectedSkills],
             photoUrl: this.candidatePhotoDataUrl || this.currentUser?.photoUrl || null,
-            resumeFileName: this.candidateResumeFileName || this.currentUser?.resumeFileName || null
+            resumeFileName: this.candidateResumeFileName || this.currentUser?.resumeFileName || null,
+            resumeFileSize: this.candidateResumeFileSize || this.currentUser?.resumeFileSize || null,
+            resumeUploadDate: this.candidateResumeUploadDate || this.currentUser?.resumeUploadDate || null,
+            isDraft: false
         };
 
         this.currentUser = updated;
@@ -946,7 +1144,8 @@ class RozgaarMitraApp {
 
         this.saveStateToStorage();
         this.updateUserUI();
-        alert('Candidate profile, photo, and resume updated successfully!');
+        this.updateProfileCompletion();
+        alert('🎉 Candidate profile, photo, resume & job preferences updated and ACTIVATED!');
     }
 
     loadProfileIntoForm() {
@@ -956,30 +1155,39 @@ class RozgaarMitraApp {
         if (document.getElementById('profEmail')) document.getElementById('profEmail').value = u.email || '';
         if (document.getElementById('profMobile')) document.getElementById('profMobile').value = u.mobile || '';
         if (document.getElementById('profLocation')) document.getElementById('profLocation').value = u.location || '';
-        if (document.getElementById('profQualification')) document.getElementById('profQualification').value = u.qualification || '12th Pass';
-        if (document.getElementById('profExperience')) document.getElementById('profExperience').value = u.experienceYears || 'Fresher';
+        if (document.getElementById('profDob')) document.getElementById('profDob').value = u.dob || '';
+        if (document.getElementById('profGender')) document.getElementById('profGender').value = u.gender || '';
+        if (document.getElementById('profQualification')) document.getElementById('profQualification').value = u.qualification || '';
+        if (document.getElementById('profExperience')) document.getElementById('profExperience').value = u.experienceYears || '';
+        if (document.getElementById('profPrefCategory')) document.getElementById('profPrefCategory').value = u.preferredCategory || '';
+        if (document.getElementById('profPrefCity')) document.getElementById('profPrefCity').value = u.preferredCity || '';
+        if (document.getElementById('profSalMin')) document.getElementById('profSalMin').value = u.expectedSalaryMin || '';
+        if (document.getElementById('profSalMax')) document.getElementById('profSalMax').value = u.expectedSalaryMax || '';
 
         if (u.photoUrl) {
             this.candidatePhotoDataUrl = u.photoUrl;
             const preview = document.getElementById('profPhotoPreview');
+            const placeholder = document.getElementById('profPhotoPlaceholder');
             if (preview) {
                 preview.src = u.photoUrl;
                 preview.classList.remove('hidden');
             }
+            if (placeholder) placeholder.classList.add('hidden');
         }
 
         if (u.resumeFileName) {
             this.candidateResumeFileName = u.resumeFileName;
-            const nameDisplay = document.getElementById('profResumeName');
-            if (nameDisplay) {
-                nameDisplay.innerHTML = `<i class="fa-solid fa-file-pdf text-danger"></i> Uploaded Resume: <strong>${this.sanitizeHTML(u.resumeFileName)}</strong>`;
-            }
+            this.candidateResumeFileSize = u.resumeFileSize || 'Uploaded Document';
+            this.candidateResumeUploadDate = u.resumeUploadDate || 'Saved';
+            this.renderResumeMetadataCard();
         }
 
+        this.renderSelectedSkillChips();
         this.renderSkillsTagSelector();
+        this.updateProfileCompletion();
     }
 
-    // EMAIL OTP FLOW FOR LOGIN (SILENT EMAIL DISPATCH WITHOUT EXPOSING OTP ON SCREEN)
+    // EMAIL OTP FLOW FOR LOGIN
     async sendEmailOtpCode() {
         const email = document.getElementById('otpEmailInput').value;
         if (!email || !email.includes('@')) {
@@ -1039,7 +1247,7 @@ class RozgaarMitraApp {
         alert(`Email OTP Verification Successful! Logged in as ${email}.`);
     }
 
-    // REGISTRATION EMAIL OTP & DUPLICATE ACCOUNT PREVENTION (SILENT EMAIL DISPATCH)
+    // REGISTRATION EMAIL OTP & DUPLICATE ACCOUNT PREVENTION
     async sendRegEmailOtpCode() {
         const email = document.getElementById('regEmail').value;
         const mobile = document.getElementById('regMobile').value;
@@ -1333,27 +1541,6 @@ class RozgaarMitraApp {
         }).join('');
     }
 
-    renderSkillsTagSelector() {
-        const container = document.getElementById('skillsTagContainer');
-        if (!container) return;
-        const selected = this.currentUser?.skills || ['Tally Prime', 'MS Excel'];
-
-        container.innerHTML = this.availableSkills.map(s => {
-            const isSel = selected.includes(s);
-            return `<div class="skill-chip ${isSel ? 'selected' : ''}" onclick="app.toggleSkillChip(this, '${s}')">${s}</div>`;
-        }).join('');
-    }
-
-    toggleSkillChip(el, skill) {
-        el.classList.toggle('selected');
-    }
-
-    getSelectedSkillsFromForm() {
-        const selected = [];
-        document.querySelectorAll('.skill-chip.selected').forEach(c => selected.push(c.innerText.trim()));
-        return selected;
-    }
-
     renderApplicationsView() {
         const container = document.getElementById('applicationsContainer');
         if (!container) return;
@@ -1483,7 +1670,7 @@ class RozgaarMitraApp {
                         <p class="text-secondary text-sm">${this.sanitizeHTML(c.email)} • ${this.sanitizeHTML(c.mobile)}</p>
                     </div>
                 </div>
-                <p class="text-sm">Qualification: <strong>${this.sanitizeHTML(c.qualification)}</strong></p>
+                <p class="text-sm">Qualification: <strong>${this.sanitizeHTML(c.qualification)}</strong> | Pref: <strong>${this.sanitizeHTML(c.preferredCategory || 'Any')}</strong> (${this.sanitizeHTML(c.preferredCity || 'Any')})</p>
                 ${c.resumeFileName ? `<p class="text-sm text-success mt-1"><i class="fa-solid fa-file-pdf"></i> Resume: ${this.sanitizeHTML(c.resumeFileName)}</p>` : ''}
                 <div class="job-skills-tags mt-2">
                     ${(c.skills || []).map(s => `<span class="skill-tag">${this.sanitizeHTML(s)}</span>`).join('')}
