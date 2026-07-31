@@ -1,12 +1,9 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - 100% PRODUCTION CORE ENGINE
  * 
- * CANDIDATE PROFILE FORM REDESIGN:
- * 1. Profile completion percentage progress bar (0% to 100%).
- * 2. New fields: Preferred category, Preferred city, Expected min/max salary, DOB, Gender.
- * 3. Searchable skill tags + custom skill adder + removable chips.
- * 4. Photo preview & Resume file metadata card with Replace option.
- * 5. Save as Draft & Save & Activate Profile options.
+ * STRICT DIRECTIVE:
+ * Removed ALL seed/dummy initial jobs!
+ * The jobs database starts COMPLETELY EMPTY. Only jobs explicitly posted by the Admin are displayed.
  */
 
 class RozgaarMitraApp {
@@ -54,7 +51,7 @@ class RozgaarMitraApp {
 
     init() {
         this.loadStateFromStorage();
-        this.seedInitialJobsIfEmpty();
+        this.purgeInitialSeedJobs(); // Clean wipe of any old initial seed jobs
         this.setupTheme();
         this.renderCategoryCards();
         this.renderFeaturedJobs();
@@ -102,161 +99,13 @@ class RozgaarMitraApp {
         this.updateUserUI();
     }
 
-    seedInitialJobsIfEmpty() {
-        if (!this.jobs || this.jobs.length === 0) {
-            this.jobs = [
-                {
-                    id: 'job-101',
-                    title: 'Senior Tally & GST Accountant',
-                    companyName: 'Apex Logistics & Freight Pvt Ltd',
-                    category: 'Accounts & Finance',
-                    location: 'Delhi NCR',
-                    salary: '₹28,000 - ₹35,000 / month',
-                    qualificationRequired: 'Graduate (BA, B.Com, B.Sc, B.Tech, etc.)',
-                    experienceRequired: '2-4 Years',
-                    positions: 3,
-                    requiredSkills: ['Tally Prime', 'GST Filing', 'MS Excel', 'Billing & ERP'],
-                    description: 'Responsible for daily accounts management, GST invoice creation, filing monthly GSTR 1 & 3B, bank reconciliation, and vendor payments.',
-                    status: 'PUBLISHED',
-                    postedAt: '2026-07-28'
-                },
-                {
-                    id: 'job-102',
-                    title: 'BPO Customer Support Executive (Voice Process)',
-                    companyName: 'Vanguard Global BPO Services',
-                    category: 'Telecalling & Customer Support',
-                    location: 'Noida, Delhi NCR',
-                    salary: '₹18,000 - ₹24,000 / month',
-                    qualificationRequired: '12th Pass (Intermediate)',
-                    experienceRequired: 'Fresher',
-                    positions: 15,
-                    requiredSkills: ['Customer Support', 'English Speaking', 'Telecalling'],
-                    description: 'Handle inbound candidate and customer queries over phone and email. Excellent spoken Hindi & basic English required. Day shifts available.',
-                    status: 'PUBLISHED',
-                    postedAt: '2026-07-29'
-                },
-                {
-                    id: 'job-103',
-                    title: 'Computer Data Entry & Back Office Operator',
-                    companyName: 'Shri Ram Enterprises',
-                    category: 'Back Office & Data Entry',
-                    location: 'Lucknow',
-                    salary: '₹15,000 - ₹20,000 / month',
-                    qualificationRequired: '12th Pass (Intermediate)',
-                    experienceRequired: 'Fresher',
-                    positions: 5,
-                    requiredSkills: ['Data Entry', 'MS Excel', 'Hindi Typing'],
-                    description: 'Accurate data entry of customer registrations and stock inventory into MS Excel spreadsheets. High typing speed required.',
-                    status: 'PUBLISHED',
-                    postedAt: '2026-07-30'
-                },
-                {
-                    id: 'job-104',
-                    title: 'Field Sales & Business Development Executive',
-                    companyName: 'PayTM QR Business Merchant Services',
-                    category: 'Sales & Marketing',
-                    location: 'Patna',
-                    salary: '₹20,000 - ₹26,000 / month + Incentives',
-                    qualificationRequired: '10th Pass (High School)',
-                    experienceRequired: '1-2 Years',
-                    positions: 10,
-                    requiredSkills: ['Field Sales', 'Customer Support', 'Driving (LMV/HMV)'],
-                    description: 'Visit local retail shops, onboard merchant partners, install QR codes, and drive merchant transactions. Two-wheeler mandatory.',
-                    status: 'PUBLISHED',
-                    postedAt: '2026-07-30'
-                },
-                {
-                    id: 'job-105',
-                    title: 'Frontend Web Developer (HTML/CSS/JS)',
-                    companyName: 'TechVibe Digital Solutions',
-                    category: 'IT & Software Development',
-                    location: 'Work From Home',
-                    salary: '₹35,000 - ₹50,000 / month',
-                    qualificationRequired: 'Graduate (BA, B.Com, B.Sc, B.Tech, etc.)',
-                    experienceRequired: '2-3 Years',
-                    positions: 2,
-                    requiredSkills: ['Web Development', 'Photoshop', 'MS Excel'],
-                    description: 'Build fast, mobile-friendly responsive web applications using HTML5, Vanilla CSS3, JavaScript, and Web APIs. Remote work.',
-                    status: 'PUBLISHED',
-                    postedAt: '2026-07-31'
-                },
-                {
-                    id: 'job-106',
-                    title: 'Warehouse & Store Operations Manager',
-                    companyName: 'Reliance Retail Logistics Depot',
-                    category: 'Operations & Logistics',
-                    location: 'Jaipur',
-                    salary: '₹30,000 - ₹42,000 / month',
-                    qualificationRequired: 'Diploma / ITI',
-                    experienceRequired: '3-5 Years',
-                    positions: 2,
-                    requiredSkills: ['Store Operations', 'Inventory Management', 'MS Excel'],
-                    description: 'Manage warehouse inventory receiving, dispatch scheduling, stock audit, and team management in central dispatch depot.',
-                    status: 'PUBLISHED',
-                    postedAt: '2026-07-27'
-                },
-                {
-                    id: 'job-107',
-                    title: 'Telecalling Specialist (English & Hindi)',
-                    companyName: 'HDFC Bank Credit Direct Agency',
-                    category: 'Telecalling & Customer Support',
-                    location: 'Delhi NCR',
-                    salary: '₹16,000 - ₹22,000 / month',
-                    qualificationRequired: '12th Pass (Intermediate)',
-                    experienceRequired: 'Fresher',
-                    positions: 8,
-                    requiredSkills: ['Telecalling', 'Customer Support', 'English Speaking'],
-                    description: 'Call verified lead lists to explain banking products and credit services. Fixed salary plus monthly commission.',
-                    status: 'PUBLISHED',
-                    postedAt: '2026-07-28'
-                },
-                {
-                    id: 'job-108',
-                    title: 'Graphic & CorelDraw Designer',
-                    companyName: 'Metro Print & Media Pvt Ltd',
-                    category: 'IT & Software Development',
-                    location: 'Mumbai',
-                    salary: '₹25,000 - ₹32,000 / month',
-                    qualificationRequired: 'Diploma / ITI',
-                    experienceRequired: '1-2 Years',
-                    positions: 2,
-                    requiredSkills: ['CorelDraw', 'Photoshop', 'Web Development'],
-                    description: 'Design banners, flex boards, brochure layouts, and digital branding assets using CorelDraw and Photoshop.',
-                    status: 'PUBLISHED',
-                    postedAt: '2026-07-29'
-                },
-                {
-                    id: 'job-109',
-                    title: 'Digital Marketing & Social Media Executive',
-                    companyName: 'Kriti Herbal & Wellness',
-                    category: 'Sales & Marketing',
-                    location: 'Bengaluru',
-                    salary: '₹24,000 - ₹32,000 / month',
-                    qualificationRequired: 'Graduate (BA, B.Com, B.Sc, B.Tech, etc.)',
-                    experienceRequired: '1-2 Years',
-                    positions: 3,
-                    requiredSkills: ['Digital Marketing', 'Photoshop', 'English Speaking'],
-                    description: 'Create social media posts, run Instagram/Facebook ads, manage Google Ads campaigns, and drive online lead generation.',
-                    status: 'PUBLISHED',
-                    postedAt: '2026-07-30'
-                },
-                {
-                    id: 'job-110',
-                    title: 'Junior Billing & Inventory Accountant',
-                    companyName: 'Shubham Auto Spares Pvt Ltd',
-                    category: 'Accounts & Finance',
-                    location: 'Kanpur',
-                    salary: '₹16,000 - ₹21,000 / month',
-                    qualificationRequired: '12th Pass (Intermediate)',
-                    experienceRequired: 'Fresher',
-                    positions: 4,
-                    requiredSkills: ['Tally Prime', 'Billing & ERP', 'MS Excel'],
-                    description: 'Generate daily counter invoices, log inward stock entries, and maintain customer credit registers in Tally Prime.',
-                    status: 'PUBLISHED',
-                    postedAt: '2026-07-31'
-                }
-            ];
+    purgeInitialSeedJobs() {
+        // Remove old pre-seeded initial jobs (job-101 through job-110)
+        if (this.jobs && this.jobs.length > 0) {
+            this.jobs = this.jobs.filter(j => !j.id.startsWith('job-10') && !j.id.startsWith('job-11'));
             this.saveStateToStorage();
+        } else {
+            this.jobs = [];
         }
     }
 
@@ -407,8 +256,8 @@ class RozgaarMitraApp {
 
     loadStateFromStorage() {
         try {
-            this.jobs = JSON.parse(this.getStorageItem('rm_jobs_v13') || '[]');
-            this.candidates = JSON.parse(this.getStorageItem('rm_candidates_v13') || '[]');
+            this.jobs = JSON.parse(this.getStorageItem('rm_jobs_v14') || '[]');
+            this.candidates = JSON.parse(this.getStorageItem('rm_candidates_v14') || '[]');
             this.applications = JSON.parse(this.getStorageItem('rm_applications') || '[]');
             this.savedJobIds = JSON.parse(this.getStorageItem('rm_saved_job_ids') || '[]');
             this.notifications = JSON.parse(this.getStorageItem('rm_notifications') || '[]');
@@ -422,8 +271,8 @@ class RozgaarMitraApp {
     }
 
     saveStateToStorage() {
-        this.setStorageItem('rm_jobs_v13', JSON.stringify(this.jobs));
-        this.setStorageItem('rm_candidates_v13', JSON.stringify(this.candidates));
+        this.setStorageItem('rm_jobs_v14', JSON.stringify(this.jobs));
+        this.setStorageItem('rm_candidates_v14', JSON.stringify(this.candidates));
         this.setStorageItem('rm_applications', JSON.stringify(this.applications));
         this.setStorageItem('rm_saved_job_ids', JSON.stringify(this.savedJobIds));
         this.setStorageItem('rm_notifications', JSON.stringify(this.notifications));
@@ -635,12 +484,12 @@ class RozgaarMitraApp {
         const container = document.getElementById('featuredJobsContainer');
         if (!container) return;
 
-        if (this.jobs.length === 0) {
+        if (!this.jobs || this.jobs.length === 0) {
             container.innerHTML = `
-                <div class="card p-5 text-center text-muted full-width">
+                <div class="card p-5 text-center text-muted full-width" style="grid-column: 1 / -1;">
                     <i class="fa-solid fa-briefcase fa-2x mb-3 text-primary d-block"></i>
                     <h3>No Job Vacancies Available Yet</h3>
-                    <p class="mt-1">Verified private sector hiring vacancies will appear here.</p>
+                    <p class="mt-1">New verified vacancies posted by the Admin Consultancy team will appear here.</p>
                 </div>
             `;
             return;
@@ -902,7 +751,6 @@ class RozgaarMitraApp {
         this.navigateTo('applications');
     }
 
-    // PROFILE COMPLETION CALCULATOR (0% TO 100%)
     updateProfileCompletion() {
         const fields = [
             document.getElementById('profName')?.value,
@@ -922,7 +770,7 @@ class RozgaarMitraApp {
         ];
 
         const filledCount = fields.filter(f => f && String(f).trim().length > 0).length;
-        const totalFields = fields.length; // 14 items
+        const totalFields = fields.length;
         const percentage = Math.round((filledCount / totalFields) * 100);
 
         const textEl = document.getElementById('profCompletionText');
@@ -985,7 +833,6 @@ class RozgaarMitraApp {
         }
     }
 
-    // SEARCHABLE SKILLS SELECTOR & CUSTOM CHIP TAG MANAGEMENT
     handleSkillSearch(event) {
         const query = event.target.value.toLowerCase().trim();
         this.renderSkillsTagSelector(query);
@@ -1491,7 +1338,7 @@ class RozgaarMitraApp {
             }
         } else {
             const newJob = {
-                id: 'job-' + Date.now(),
+                id: 'admin-job-' + Date.now(),
                 companyName, title, category, location, salary, qualificationRequired, experienceRequired: '1-2 Years', positions: 2,
                 requiredSkills: ['Customer Support', 'MS Excel'],
                 description, status: 'PUBLISHED', postedAt: new Date().toISOString().split('T')[0]
