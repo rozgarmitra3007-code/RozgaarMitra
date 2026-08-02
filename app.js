@@ -69,6 +69,7 @@ class RozgaarMitraApp {
         this.setupSecretAdminTriggers();
         this.setupAdminInactivityMonitor();
         this.setupRealtimeSyncListeners();
+        this.setupAutoOtpVerification();
         this.updateGoogleJobPostingSchema();
 
         const savedUser = this.getStorageItem('rm_current_user');
@@ -118,6 +119,34 @@ class RozgaarMitraApp {
         });
         
         this.updateUserUI();
+    }
+
+    // INSTANT 6-DIGIT AUTO-VERIFICATION LISTENER
+    setupAutoOtpVerification() {
+        const loginOtpInput = document.getElementById('otpEmailCode');
+        if (loginOtpInput) {
+            loginOtpInput.addEventListener('input', (e) => {
+                const val = e.target.value.trim();
+                if (val.length === 6 && /^\d{6}$/.test(val)) {
+                    this.handleEmailOtpLogin(new Event('submit'));
+                }
+            });
+        }
+
+        const regOtpInput = document.getElementById('regOtpCode');
+        if (regOtpInput) {
+            regOtpInput.addEventListener('input', (e) => {
+                const val = e.target.value.trim();
+                if (val.length === 6 && /^\d{6}$/.test(val)) {
+                    const name = document.getElementById('regName')?.value;
+                    const email = document.getElementById('regEmail')?.value;
+                    const mobile = document.getElementById('regMobile')?.value;
+                    if (name && email && mobile) {
+                        this.handleRegister(new Event('submit'));
+                    }
+                }
+            });
+        }
     }
 
     // DIRECT REAL-TIME CLOUD DATABASE SYNCHRONIZATION ENGINE
@@ -1560,7 +1589,14 @@ class RozgaarMitraApp {
 
         this.generatedEmailOtp = Math.floor(100000 + Math.random() * 900000).toString();
         this.emailOtpExpiryTime = Date.now() + (5 * 60 * 1000);
-        document.getElementById('otpEmailCodeGroup').classList.remove('hidden');
+        
+        const codeGroup = document.getElementById('otpEmailCodeGroup');
+        const codeInput = document.getElementById('otpEmailCode');
+        if (codeGroup) codeGroup.classList.remove('hidden');
+        if (codeInput) {
+            codeInput.value = '';
+            setTimeout(() => codeInput.focus(), 150);
+        }
 
         try {
             fetch('/api/send-otp', {
@@ -1570,11 +1606,11 @@ class RozgaarMitraApp {
             }).catch(e => console.warn('Email dispatch notice:', e));
         } catch(e){}
 
-        alert(`📧 Verification OTP Code Sent!\n\nA 6-digit verification code has been dispatched to ${email}.\n\nPlease check your email inbox (and spam folder) to complete login.`);
+        alert(`📧 Verification OTP Code Sent!\n\nA 6-digit verification code has been dispatched to ${email}.\n\nEnter the 6-digit OTP code below to verify & login instantly!`);
     }
 
     handleEmailOtpLogin(event) {
-        event.preventDefault();
+        if (event && event.preventDefault) event.preventDefault();
         const email = document.getElementById('otpEmailInput').value;
         const code = document.getElementById('otpEmailCode').value;
 
@@ -1614,7 +1650,8 @@ class RozgaarMitraApp {
         this.notifyRealtimeEvent('CANDIDATE_REGISTERED', u);
         this.updateUserUI();
         this.closeModal('authModal');
-        alert(`Email OTP Verification Successful! Logged in as ${email}.`);
+        alert(`🎉 Email OTP Verification Successful! Welcome, ${u.name || email}!`);
+        this.navigateTo('profile');
     }
 
     // REGISTRATION EMAIL OTP & DUPLICATE ACCOUNT PREVENTION
@@ -1635,7 +1672,14 @@ class RozgaarMitraApp {
 
         this.generatedRegEmailOtp = Math.floor(100000 + Math.random() * 900000).toString();
         this.regEmailOtpExpiryTime = Date.now() + (5 * 60 * 1000);
-        document.getElementById('regOtpCodeGroup').classList.remove('hidden');
+        
+        const codeGroup = document.getElementById('regOtpCodeGroup');
+        const codeInput = document.getElementById('regOtpCode');
+        if (codeGroup) codeGroup.classList.remove('hidden');
+        if (codeInput) {
+            codeInput.value = '';
+            setTimeout(() => codeInput.focus(), 150);
+        }
 
         try {
             fetch('/api/send-otp', {
@@ -1645,11 +1689,11 @@ class RozgaarMitraApp {
             }).catch(e => console.warn('Email dispatch notice:', e));
         } catch(e){}
 
-        alert(`📧 Registration Verification Code Sent!\n\nA 6-digit registration verification code has been dispatched to ${email}.\n\nPlease check your email inbox (and spam folder) to complete registration.`);
+        alert(`📧 Registration Verification Code Sent!\n\nA 6-digit verification code has been dispatched to ${email}.\n\nEnter the 6-digit OTP code below to verify & register!`);
     }
 
     handleRegister(event) {
-        event.preventDefault();
+        if (event && event.preventDefault) event.preventDefault();
         const name = document.getElementById('regName').value;
         const email = document.getElementById('regEmail').value;
         const mobile = document.getElementById('regMobile').value;
