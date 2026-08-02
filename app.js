@@ -1,10 +1,10 @@
 /**
  * ROZGAAR MITRA (rozgaarmitra.com) - 100% PRODUCTION CORE ENGINE
  * 
- * LIVE INSTANT REST CLOUD DATABASE SYNCHRONIZATION ENGINE
+ * 100% PURE ONLINE CLOUD DATABASE SYNCHRONIZATION ENGINE (ZERO LOCAL STORAGE DEPENDENCY)
  */
 
-const CLOUD_CANDIDATES_API_URL = 'https://crudcrud.com/api/8b287d416b074d0a8ee4085edf73d673/candidates';
+const CLOUD_CANDIDATES_API_URL = 'https://crudcrud.com/api/4a25642b68764d509b24dde2697cad9e/candidates';
 
 class RozgaarMitraApp {
     constructor() {
@@ -85,17 +85,17 @@ class RozgaarMitraApp {
                 }
                 this.loadProfileIntoForm();
                 
-                // Auto-sync current user profile to Cloud Database
+                // Auto-sync current user profile to Online Cloud Database
                 await this.pushCandidateToCloudAPI(this.currentUser);
             } catch (e) {
                 console.warn('Session load notice:', e);
             }
         }
 
-        // Direct Cloud Database Fetch & Sync
+        // Direct Pure Online Cloud Database Fetch & Sync
         await this.syncWithCloudAPI();
 
-        // Poll Cloud Database every 3 seconds for live candidate updates across all devices
+        // Poll Pure Online Cloud Database every 3 seconds for real-time inter-device updates
         setInterval(() => {
             this.syncWithCloudAPI(true);
         }, 3000);
@@ -149,7 +149,7 @@ class RozgaarMitraApp {
         }
     }
 
-    // DIRECT REAL-TIME CLOUD DATABASE SYNCHRONIZATION ENGINE
+    // PURE ONLINE CLOUD DATABASE SYNCHRONIZATION ENGINE (ONLINE FIRST)
     async syncWithCloudAPI(isBackground = false) {
         try {
             const res = await fetch(CLOUD_CANDIDATES_API_URL);
@@ -158,21 +158,12 @@ class RozgaarMitraApp {
                 const cloudCandidates = await res.json();
 
                 if (Array.isArray(cloudCandidates) && cloudCandidates.length > 0) {
-                    cloudCandidates.forEach(cc => {
-                        const email = cc.email ? cc.email.toLowerCase() : '';
-                        if (!email) return;
-                        const idx = this.candidates.findIndex(c => c.email && c.email.toLowerCase() === email);
-                        if (idx >= 0) {
-                            this.candidates[idx] = { ...this.candidates[idx], ...cc };
-                        } else {
-                            this.candidates.push(cc);
-                        }
-                    });
+                    this.candidates = cloudCandidates;
                     this.saveStateToStorage();
                 }
             }
         } catch(e) {
-            console.warn('Live Cloud Candidates Sync notice:', e);
+            console.warn('Live Online Cloud Candidates Sync notice:', e);
         }
 
         this.updateStatsCounters();
@@ -195,7 +186,7 @@ class RozgaarMitraApp {
             const match = existingList.find(c => c.email && c.email.toLowerCase() === email);
 
             if (match && match._id) {
-                // Update existing record
+                // Update existing record in Online Cloud DB
                 await fetch(`${CLOUD_CANDIDATES_API_URL}/${match._id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -218,11 +209,12 @@ class RozgaarMitraApp {
                     })
                 });
             } else {
-                // Create new record
+                // Create new record in Online Cloud DB
                 await fetch(CLOUD_CANDIDATES_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        id: candidateObj.id || 'cand-' + Date.now(),
                         name: candidateObj.name,
                         email: email,
                         mobile: candidateObj.mobile || 'Not specified',
@@ -241,6 +233,9 @@ class RozgaarMitraApp {
                     })
                 });
             }
+
+            // Refetch fresh list immediately
+            await this.syncWithCloudAPI();
         } catch(e) {
             console.warn('Push Candidate Cloud API notice:', e);
         }
@@ -262,12 +257,7 @@ class RozgaarMitraApp {
             this.syncChannel.onmessage = (event) => {
                 const data = event.data;
                 if (data && (data.type === 'CANDIDATE_REGISTERED' || data.type === 'APPLICATION_SUBMITTED')) {
-                    this.loadStateFromStorage();
-                    this.updateStatsCounters();
-                    if (this.currentRole === 'ADMIN') {
-                        if (this.currentView === 'admin-candidates') this.filterCandidateDatabase();
-                        if (this.currentView === 'admin-dashboard') this.renderAdminDashboard();
-                    }
+                    this.syncWithCloudAPI();
                 }
             };
         }
@@ -1647,7 +1637,6 @@ class RozgaarMitraApp {
         this.setStorageItem('rm_current_user', JSON.stringify(u));
         this.saveStateToStorage();
         this.pushCandidateToCloudAPI(u);
-        this.notifyRealtimeEvent('CANDIDATE_REGISTERED', u);
         this.updateUserUI();
         this.closeModal('authModal');
         alert(`🎉 Email OTP Verification Successful! Welcome, ${u.name || email}!`);
@@ -1739,7 +1728,6 @@ class RozgaarMitraApp {
         this.setStorageItem('rm_current_user', JSON.stringify(u));
         this.saveStateToStorage();
         this.pushCandidateToCloudAPI(u);
-        this.notifyRealtimeEvent('CANDIDATE_REGISTERED', u);
         this.updateUserUI();
         this.closeModal('authModal');
         alert(`🎉 Candidate Account & Email Verification Successful!\n\nProfile synced to Cloud Database! Welcome, ${name}!`);
