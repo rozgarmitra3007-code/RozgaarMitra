@@ -1,11 +1,4 @@
 {
   "name": "rozgaarmitra",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "build": "echo 'Rozgaar Mitra static build complete'"
-  },
-  "dependencies": {
-    "next": "^14.0.0"
-  }
+  "version": "1.0.0"
 }
