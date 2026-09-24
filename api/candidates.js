@@ -3,45 +3,8 @@
  * High-Performance Serverless Cloud Data Store for Candidates across all devices.
  */
 
-// Persistent Cloud In-Memory Data Store across serverless invocations
-let cloudCandidatesStore = [
-    {
-        id: 'cand-seed-1',
-        name: 'Rahul Sharma',
-        email: 'rahul.sharma99@gmail.com',
-        mobile: '+91 9811234567',
-        qualification: 'Graduate (B.Com)',
-        experienceYears: '1-2 Years',
-        location: 'Noida, Delhi NCR',
-        preferredCategory: 'Accounts & Finance',
-        preferredCity: 'Delhi NCR',
-        expectedSalaryMin: '22000',
-        expectedSalaryMax: '28000',
-        skills: ['Tally Prime', 'GST Filing', 'MS Excel'],
-        dob: '1998-05-14',
-        gender: 'Male',
-        isSuspended: false,
-        registeredAt: new Date().toISOString().split('T')[0]
-    },
-    {
-        id: 'cand-seed-2',
-        name: 'Priya Verma',
-        email: 'priya.verma.hr@gmail.com',
-        mobile: '+91 9876512340',
-        qualification: '12th Pass (Intermediate)',
-        experienceYears: 'Fresher',
-        location: 'Lucknow, UP',
-        preferredCategory: 'Telecalling & Customer Support',
-        preferredCity: 'Lucknow',
-        expectedSalaryMin: '16000',
-        expectedSalaryMax: '22000',
-        skills: ['Customer Support', 'English Speaking', 'Telecalling'],
-        dob: '2001-08-22',
-        gender: 'Female',
-        isSuspended: false,
-        registeredAt: new Date().toISOString().split('T')[0]
-    }
-];
+// Production Data Store for Registered Candidates (starts clean, zero demo data)
+let cloudCandidatesStore = [];
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');

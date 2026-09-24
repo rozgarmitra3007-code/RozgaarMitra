@@ -604,6 +604,9 @@
                         <a href="#" class="admin-sidebar-link" data-admin-page="admin-audit" onclick="app.navigateTo('admin-audit')">
                             <i class="fa-solid fa-shield-halved"></i> <span>Audit Log</span>
                         </a>
+                        <a href="#" class="admin-sidebar-link" onclick="app.openAdminSettingsModal()">
+                            <i class="fa-solid fa-gear"></i> <span>Email Settings</span>
+                        </a>
                     </nav>
 
                     <div style="margin-top: auto; padding-top: 2rem; border-top: 1px solid #1e293b;">
@@ -1094,6 +1097,80 @@
         </div>
     </div>
 
+    <!-- EMAIL JOB APPLICATION MODAL (PRIVACY FIRST) -->
+    <div class="modal-backdrop hidden" id="jobApplyModal">
+        <div class="modal-card modal-lg">
+            <button class="modal-close" onclick="app.closeModal('jobApplyModal')"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="jobApplyModalTitle">Apply for Job via Email</h2>
+            <p class="text-secondary text-sm mb-3">Submit your application details to open your default email client with pre-filled details</p>
+            
+            <div class="p-3 mb-3 bg-surface border-radius" id="jobApplySummaryBox" style="border-left:4px solid #002b66;"></div>
+
+            <form id="jobApplyForm" onsubmit="app.submitEmailApplication(event)">
+                <input type="hidden" id="applyJobId">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Full Candidate Name *</label>
+                        <input type="text" id="appCandName" class="form-control" required placeholder="Enter full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Mobile Number (+91) *</label>
+                        <input type="tel" id="appCandMobile" class="form-control" required placeholder="Enter 10-digit mobile number">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address *</label>
+                        <input type="email" id="appCandEmail" class="form-control" required placeholder="Enter email address">
+                    </div>
+                    <div class="form-group">
+                        <label>Current Location / City *</label>
+                        <input type="text" id="appCandLocation" class="form-control" required placeholder="e.g. Noida, Delhi NCR">
+                    </div>
+                    <div class="form-group">
+                        <label>Highest Qualification *</label>
+                        <select id="appCandQual" class="form-control" required>
+                            <option value="10th Pass (High School)">10th Pass</option>
+                            <option value="12th Pass (Intermediate)">12th Pass</option>
+                            <option value="Diploma / ITI">Diploma / ITI</option>
+                            <option value="Graduate (BA, B.Com, B.Sc, B.Tech, etc.)">Graduate</option>
+                            <option value="Post Graduate">Post Graduate</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Total Experience *</label>
+                        <select id="appCandExp" class="form-control" required>
+                            <option value="Fresher">Fresher (0 Years)</option>
+                            <option value="1-2 Years">1-2 Years</option>
+                            <option value="2-5 Years">2-5 Years</option>
+                            <option value="5+ Years">5+ Years</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- RESUME ATTACHMENT NOTICE -->
+                <div class="p-3 mb-3 mt-3" style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px;">
+                    <h4 style="font-size:0.95rem; color:#0369a1; margin-bottom:0.25rem;"><i class="fa-solid fa-paperclip"></i> Resume Attachment Notice</h4>
+                    <p class="text-sm text-secondary" style="margin:0; line-height:1.4;">
+                        "Apply via Email" पर क्लिक करने पर आपका Default Email App खुलेगा।<br>
+                        <strong style="color:#0284c7;">कृपया अपना Resume इस Email में Attach करके Send करें।</strong>
+                    </p>
+                </div>
+
+                <!-- MANDATORY CONSENT CHECKBOX -->
+                <div class="mb-3 text-sm">
+                    <label style="display:flex; align-items:flex-start; gap:0.5rem; cursor:pointer;">
+                        <input type="checkbox" id="appConsentCheck" required style="width:auto; margin-top:3px;">
+                        <span>I agree to share my application details with the employer for this job application. / मैं इस नौकरी के आवेदन के लिए नियोक्ता के साथ अपना विवरण साझा करने के लिए सहमत हूँ। *</span>
+                    </label>
+                </div>
+
+                <div class="flex-between border-top pt-3 mt-3">
+                    <button type="button" class="btn btn-outline" onclick="app.closeModal('jobApplyModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Apply via Email (Resume भेजें)</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Post / Edit Job Modal -->
     <div class="modal-backdrop hidden" id="jobModal">
         <div class="modal-card modal-lg">
@@ -1109,6 +1186,17 @@
                     <div class="form-group">
                         <label>Company Name *</label>
                         <input type="text" id="jobCompany" class="form-control" required placeholder="Apex Freight Pvt Ltd">
+                    </div>
+                    <div class="form-group">
+                        <label>Vacancy Status * (Default: Draft)</label>
+                        <select id="jobStatus" class="form-control" required>
+                            <option value="DRAFT">Draft (Hidden from Public Website)</option>
+                            <option value="PENDING">Pending Review (Hidden)</option>
+                            <option value="PUBLISHED">Published (Visible on Website)</option>
+                            <option value="PAUSED">Paused / On Hold (Hidden)</option>
+                            <option value="EXPIRED">Expired (Hidden)</option>
+                            <option value="REJECTED">Rejected (Hidden)</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Category *</label>
@@ -1138,13 +1226,48 @@
                             <option value="Graduate (BA, B.Com, B.Sc, B.Tech, etc.)">Graduate</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Application Receiving Email</label>
+                        <input type="email" id="jobAppEmail" class="form-control" placeholder="applications@rozgaarmitra.com or employer HR email">
+                        <small class="text-muted">If blank, defaults to Admin Application Email</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Expiry Date (Optional)</label>
+                        <input type="date" id="jobExpiryDate" class="form-control">
+                        <small class="text-muted">Vacancies auto-hide after expiry date</small>
+                    </div>
+                    <div class="form-group full-width" style="display:flex; align-items:center; gap:0.5rem;">
+                        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-weight:600;">
+                            <input type="checkbox" id="jobCompanyVerified" style="width:auto;">
+                            <span><i class="fa-solid fa-shield-check text-success"></i> Verified Employer Badge (Only enable for verified companies)</span>
+                        </label>
+                    </div>
                     <div class="form-group full-width">
                         <label>Job Description *</label>
                         <textarea id="jobDesc" class="form-control" rows="4" required></textarea>
                     </div>
                 </div>
                 <div class="text-right mt-3">
-                    <button type="submit" class="btn btn-primary">Save Job Details</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Save Job Details</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Settings Modal -->
+    <div class="modal-backdrop hidden" id="adminSettingsModal">
+        <div class="modal-card" style="max-width:500px;">
+            <button class="modal-close" onclick="app.closeModal('adminSettingsModal')"><i class="fa-solid fa-xmark"></i></button>
+            <h2><i class="fa-solid fa-gear text-primary"></i> Admin Email & System Settings</h2>
+            <p class="text-secondary text-sm mb-3">Configure application receiving email and system defaults</p>
+            <form id="adminSettingsForm" onsubmit="app.saveAdminSettings(event)" class="mt-3">
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold">Default Application / Resume Receiving Email *</label>
+                    <input type="email" id="settingDefaultAppEmail" class="form-control" required placeholder="applications@rozgaarmitra.com">
+                    <small class="text-muted">All candidate applications will be directed to this email unless a job-specific email is configured.</small>
+                </div>
+                <div class="text-right">
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save Settings</button>
                 </div>
             </form>
         </div>
@@ -1167,7 +1290,7 @@
     </div>
 
     <!-- JS Core Engine with Cache Busting Version -->
-    <script src="app.js?v=20260802_v17"></script>
+    <script src="app.js?v=20260924_v18"></script>
     
     <!-- Register PWA Service Worker -->
     <script>

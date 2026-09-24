@@ -39,6 +39,9 @@ class RozgaarMitraApp {
         this.copyrightClickTimer = null;
         this.searchDebounceTimer = null;
 
+        // Default Application Email Configuration
+        this.defaultAppEmail = this.getStorageItem('rm_default_app_email') || 'rozgarmitra3007@gmail.com';
+
         // Real-Time Inter-Tab Broadcast Channel
         try {
             this.syncChannel = new BroadcastChannel('rm_realtime_sync');
@@ -263,9 +266,30 @@ class RozgaarMitraApp {
         }
     }
 
+    getPublicPublishedJobs() {
+        if (!this.jobs || !Array.isArray(this.jobs)) return [];
+        const today = new Date().toISOString().split('T')[0];
+        return this.jobs.filter(j => {
+            if (!j) return false;
+            const statusUpper = (j.status || '').toUpperCase();
+            if (statusUpper !== 'PUBLISHED') return false;
+            if (j.isActive === false || j.isDeleted === true) return false;
+            if (j.expiryDate && j.expiryDate < today) return false;
+            return true;
+        });
+    }
+
     purgeInitialSeedJobs() {
-        if (this.jobs && this.jobs.length > 0) {
-            this.jobs = this.jobs.filter(j => !j.id.startsWith('job-10') && !j.id.startsWith('job-11'));
+        if (this.jobs && Array.isArray(this.jobs)) {
+            this.jobs = this.jobs.filter(j => 
+                j && 
+                j.id && 
+                !j.id.startsWith('job-10') && 
+                !j.id.startsWith('job-11') && 
+                !j.id.startsWith('job-demo') && 
+                !j.id.startsWith('cand-seed') &&
+                j.companyName !== 'Demo Company'
+            );
             this.saveStateToStorage();
         } else {
             this.jobs = [];
@@ -683,18 +707,25 @@ class RozgaarMitraApp {
         const container = document.getElementById('featuredJobsContainer');
         if (!container) return;
 
-        if (!this.jobs || this.jobs.length === 0) {
+        const publicJobs = this.getPublicPublishedJobs();
+
+        if (publicJobs.length === 0) {
             container.innerHTML = `
-                <div class="card p-5 text-center text-muted full-width" style="grid-column: 1 / -1;">
-                    <i class="fa-solid fa-briefcase fa-2x mb-3 text-primary d-block"></i>
-                    <h3>No Job Vacancies Available Yet</h3>
-                    <p class="mt-1">New verified vacancies posted by the Admin Consultancy team will appear here.</p>
+                <div class="card p-5 text-center text-muted full-width" style="grid-column: 1 / -1; background:#ffffff; border-radius:12px; border:1px solid #e2e8f0;">
+                    <i class="fa-solid fa-briefcase fa-3x mb-3 text-primary d-block"></i>
+                    <h3 style="font-size:1.3rem; color:#0f172a; margin-bottom:0.5rem;">अभी कोई नई नौकरी उपलब्ध नहीं है।</h3>
+                    <p class="mt-1 text-secondary" style="font-size:1rem;">नई verified vacancies जल्द ही उपलब्ध होंगी।</p>
+                    <div class="mt-3">
+                        <button class="btn btn-primary" onclick="app.openAuthModal('register')">
+                            <i class="fa-solid fa-bell"></i> Job Alert के लिए अपना profile/register करें
+                        </button>
+                    </div>
                 </div>
             `;
             return;
         }
 
-        const visible = this.jobs.slice(0, 6);
+        const visible = publicJobs.slice(0, 6);
         container.innerHTML = visible.map(j => this.createJobCardHTML(j)).join('');
     }
 
@@ -719,19 +750,20 @@ class RozgaarMitraApp {
     }
 
     executeFilterSearch() {
-        const kw = (document.getElementById('filterKeyword')?.value || '').toLowerCase();
+        const kw = (document.getElementById('filterKeyword')?.value || '').toLowerCase().trim();
         const cat = document.getElementById('filterCategory')?.value || '';
         const loc = document.getElementById('filterLocation')?.value || '';
         const qual = document.getElementById('filterQualification')?.value || '';
         const sort = document.getElementById('sortJobs')?.value || 'latest';
 
-        let res = [...this.jobs];
+        const publicJobs = this.getPublicPublishedJobs();
+        let res = [...publicJobs];
 
         if (kw) {
             res = res.filter(j => 
                 j.title.toLowerCase().includes(kw) || 
                 j.companyName.toLowerCase().includes(kw) || 
-                j.description.toLowerCase().includes(kw) ||
+                (j.description && j.description.toLowerCase().includes(kw)) ||
                 (j.requiredSkills && j.requiredSkills.some(s => s.toLowerCase().includes(kw)))
             );
         }
@@ -741,17 +773,29 @@ class RozgaarMitraApp {
         if (qual) res = res.filter(j => j.qualificationRequired === qual);
 
         if (sort === 'salary-high') res.sort((a, b) => b.salary - a.salary);
-        else res.sort((a, b) => new Date(b.postedAt) - new Date(a.postedAt));
+        else res.sort((a, b) => new Date(b.postedAt || 0) - new Date(a.postedAt || 0));
 
-        if (document.getElementById('jobsResultCount')) document.getElementById('jobsResultCount').textContent = `Showing ${res.length} jobs`;
+        const countEl = document.getElementById('jobsResultCount');
+        if (countEl) {
+            if (res.length === 0) {
+                countEl.textContent = '0 Vacancies Available';
+            } else {
+                countEl.textContent = `Showing ${res.length} verified vacancy${res.length > 1 ? 'ies' : ''}`;
+            }
+        }
 
         const container = document.getElementById('allJobsContainer');
         if (container) {
             if (res.length === 0) {
                 container.innerHTML = `
-                    <div class="card p-5 text-center text-muted">
-                        <i class="fa-solid fa-briefcase fa-2x mb-3 text-primary d-block"></i>
-                        <h3>No jobs posted matching filters.</h3>
+                    <div class="card p-5 text-center text-muted" style="background:#ffffff; border-radius:12px; border:1px solid #e2e8f0;">
+                        <i class="fa-solid fa-magnifying-glass-chart fa-3x mb-3 text-primary d-block"></i>
+                        <h3 style="font-size:1.3rem; color:#0f172a; margin-bottom:0.5rem;">आपकी खोज से कोई vacancy नहीं मिली।</h3>
+                        <p class="mt-1 text-secondary">No verified vacancies found matching your search criteria right now.</p>
+                        <div style="display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap; margin-top:1.25rem;">
+                            <button class="btn btn-outline" onclick="app.resetJobFilters()"><i class="fa-solid fa-rotate-left"></i> Clear Filters</button>
+                            <button class="btn btn-primary" onclick="app.openAuthModal('register')"><i class="fa-solid fa-bell"></i> Get Job Alerts</button>
+                        </div>
                     </div>
                 `;
             } else {
@@ -792,9 +836,10 @@ class RozgaarMitraApp {
     renderSavedJobs() {
         const container = document.getElementById('savedJobsContainer');
         if (!container) return;
-        const saved = this.jobs.filter(j => this.savedJobIds.includes(j.id));
+        const publicJobs = this.getPublicPublishedJobs();
+        const saved = publicJobs.filter(j => this.savedJobIds.includes(j.id));
         if (saved.length === 0) {
-            container.innerHTML = `<div class="card p-5 text-center text-muted full-width">No saved jobs yet.</div>`;
+            container.innerHTML = `<div class="card p-5 text-center text-muted full-width">No saved vacancies yet.</div>`;
         } else {
             container.innerHTML = saved.map(j => this.createJobCardHTML(j)).join('');
         }
@@ -803,21 +848,21 @@ class RozgaarMitraApp {
     createJobCardHTML(job) {
         const isSaved = this.savedJobIds.includes(job.id);
         const isApplied = this.currentUser && this.applications.some(a => a.jobId === job.id && a.candidateEmail === this.currentUser.email);
-        const isClosed = job.status === 'HIRING_CLOSED' || job.status === 'VACANCY_FULL';
 
         const safeTitle = this.sanitizeHTML(job.title);
         const safeCompany = this.sanitizeHTML(job.companyName);
         const safeLocation = this.sanitizeHTML(job.location);
+        const isVerified = job.isCompanyVerified ? `<span class="badge badge-success text-xs" style="margin-left:4px;"><i class="fa-solid fa-shield-check"></i> Verified Employer</span>` : '';
 
         return `
-            <div class="job-card ${isClosed ? 'hiring-closed-card' : ''}">
+            <div class="job-card">
                 <div>
                     <div class="flex-between mb-2">
                         <div style="display:flex; align-items:center; gap:0.6rem;">
                             <div class="job-company-avatar">${safeCompany.substring(0, 2).toUpperCase()}</div>
                             <div>
-                                <strong class="text-sm text-secondary">${safeCompany}</strong>
-                                <h3 style="font-size:1.1rem;">${safeTitle}</h3>
+                                <strong class="text-sm text-secondary">${safeCompany}</strong> ${isVerified}
+                                <h3 style="font-size:1.1rem; margin-top:2px;">${safeTitle}</h3>
                             </div>
                         </div>
                         <button class="btn btn-icon-only ${isSaved ? 'text-danger' : 'text-muted'}" onclick="app.toggleSaveJob('${job.id}', event)" title="Save Job">
@@ -829,8 +874,6 @@ class RozgaarMitraApp {
                         <span><i class="fa-solid fa-location-dot"></i> ${safeLocation}</span> • 
                         <span><i class="fa-solid fa-graduation-cap"></i> ${this.sanitizeHTML(job.qualificationRequired)}</span>
                     </div>
-
-                    ${isClosed ? `<span class="badge badge-danger mb-2"><i class="fa-solid fa-lock"></i> Vacancy Full / Hiring Closed</span>` : ''}
 
                     <div class="job-skills-tags">
                         ${(job.requiredSkills || []).map(s => `<span class="skill-tag">${this.sanitizeHTML(s)}</span>`).join('')}
@@ -844,12 +887,9 @@ class RozgaarMitraApp {
                         ${this.currentRole === 'ADMIN' ? 
                             `<button class="btn btn-primary btn-sm mr-1" onclick="app.editJob('${job.id}')"><i class="fa-solid fa-pen"></i> Edit</button>
                              <button class="btn btn-outline btn-sm text-danger" onclick="app.deleteJob('${job.id}')"><i class="fa-solid fa-trash"></i></button>` :
-                            (isClosed ?
-                                `<button class="btn btn-outline btn-sm" disabled style="opacity:0.6;"><i class="fa-solid fa-lock"></i> Hiring Closed</button>` :
-                                (isApplied ? 
-                                    `<span class="badge badge-success"><i class="fa-solid fa-check"></i> Applied</span>` :
-                                    `<button class="btn btn-primary btn-sm" onclick="app.applyForJob('${job.id}')">Apply Now</button>`
-                                )
+                            (isApplied ? 
+                                `<span class="badge badge-success"><i class="fa-solid fa-check"></i> Applied</span>` :
+                                `<button class="btn btn-primary btn-sm" onclick="app.openApplyModal('${job.id}')"><i class="fa-solid fa-paper-plane"></i> Apply via Email</button>`
                             )
                         }
                     </div>
@@ -862,26 +902,35 @@ class RozgaarMitraApp {
         const job = this.jobs.find(j => j.id === jobId);
         if (!job) return;
 
+        const publicJobs = this.getPublicPublishedJobs();
+        const isPublic = publicJobs.some(j => j.id === jobId);
+
+        if (this.currentRole !== 'ADMIN' && !isPublic) {
+            alert('This job vacancy is currently unavailable or has expired.');
+            this.navigateTo('jobs');
+            return;
+        }
+
         this.navigateTo('job-detail');
         const isApplied = this.currentUser && this.applications.some(a => a.jobId === job.id && a.candidateEmail === this.currentUser.email);
-        const isClosed = job.status === 'HIRING_CLOSED' || job.status === 'VACANCY_FULL';
+        const isVerified = job.isCompanyVerified ? `<span class="badge badge-success ml-2"><i class="fa-solid fa-shield-check"></i> Verified Employer</span>` : '';
 
         document.getElementById('jobDetailContent').innerHTML = `
             <div class="card p-4">
                 <div class="flex-between mb-4">
                     <div>
                         <span class="badge badge-primary mb-2">${this.sanitizeHTML(job.category)}</span>
-                        ${isClosed ? `<span class="badge badge-danger mb-2 ml-2"><i class="fa-solid fa-lock"></i> Vacancy Full / Hiring Closed</span>` : ''}
-                        <h1>${this.sanitizeHTML(job.title)}</h1>
+                        ${isVerified}
+                        <h1 class="mt-2">${this.sanitizeHTML(job.title)}</h1>
                         <p class="text-secondary">${this.sanitizeHTML(job.companyName)} • ${this.sanitizeHTML(job.location)}</p>
                     </div>
                     <h2 class="text-success">${this.sanitizeHTML(job.salary)}</h2>
                 </div>
                 <div class="form-grid mb-4">
                     <div><strong>Qualification:</strong> ${this.sanitizeHTML(job.qualificationRequired)}</div>
-                    <div><strong>Experience:</strong> ${this.sanitizeHTML(job.experienceRequired)}</div>
-                    <div><strong>Vacancies:</strong> ${job.positions || 2} Positions</div>
-                    <div><strong>Status:</strong> <span class="badge ${isClosed ? 'badge-danger' : 'badge-success'}">${isClosed ? 'Vacancy Full / Hiring Closed' : 'Active Vacancy'}</span></div>
+                    <div><strong>Experience:</strong> ${this.sanitizeHTML(job.experienceRequired || 'Freshers / Exp')}</div>
+                    <div><strong>Positions:</strong> ${job.positions || 'Multiple'} Vacancies</div>
+                    <div><strong>Status:</strong> <span class="badge badge-success">Active Published Vacancy</span></div>
                 </div>
                 <div class="mb-4">
                     <h3>Job Description & Key Duties</h3>
@@ -892,14 +941,10 @@ class RozgaarMitraApp {
                     ${this.currentRole === 'ADMIN' ?
                         `<div>
                             <button class="btn btn-primary btn-lg mr-2" onclick="app.editJob('${job.id}')"><i class="fa-solid fa-pen"></i> Edit Job Details</button>
-                            <button class="btn btn-warning btn-lg" onclick="app.toggleHiringClosed('${job.id}')"><i class="fa-solid fa-lock"></i> ${isClosed ? 'Re-open Hiring' : 'Mark Vacancy Full'}</button>
                          </div>` :
-                        (isClosed ?
-                            `<button class="btn btn-outline btn-lg" disabled><i class="fa-solid fa-lock"></i> Vacancy Full / Hiring Closed</button>` :
-                            (isApplied ? 
-                                `<button class="btn btn-success btn-lg" disabled><i class="fa-solid fa-check"></i> Applied</button>` :
-                                `<button class="btn btn-primary btn-lg" onclick="app.applyForJob('${job.id}')">Apply Now</button>`
-                            )
+                        (isApplied ? 
+                            `<button class="btn btn-success btn-lg" disabled><i class="fa-solid fa-check"></i> Applied via Email</button>` :
+                            `<button class="btn btn-primary btn-lg" onclick="app.openApplyModal('${job.id}')"><i class="fa-solid fa-paper-plane"></i> Apply via Email (Resume भेजें)</button>`
                         )
                     }
                 </div>
@@ -907,887 +952,122 @@ class RozgaarMitraApp {
         `;
     }
 
-    applyForJob(jobId) {
+    openApplyModal(jobId) {
         const job = this.jobs.find(j => j.id === jobId);
         if (!job) return;
 
-        if (job.status === 'HIRING_CLOSED' || job.status === 'VACANCY_FULL') {
-            alert('Hiring is currently closed for this job as all vacancies are filled.');
+        if (!this.currentUser) {
+            this.openAuthModal('email-otp');
+            alert('Please login or register to apply for vacancies!');
             return;
         }
 
-        if (!this.currentUser) {
-            this.openAuthModal('email-otp');
-            alert('Please login or register to apply for jobs!');
+        const u = this.currentUser;
+        document.getElementById('applyJobId').value = job.id;
+
+        if (document.getElementById('appCandName')) document.getElementById('appCandName').value = u.name || '';
+        if (document.getElementById('appCandMobile')) document.getElementById('appCandMobile').value = u.mobile || '';
+        if (document.getElementById('appCandEmail')) document.getElementById('appCandEmail').value = u.email || '';
+        if (document.getElementById('appCandLocation')) document.getElementById('appCandLocation').value = u.location || '';
+        if (document.getElementById('appCandQual')) document.getElementById('appCandQual').value = u.qualification || '12th Pass (Intermediate)';
+        if (document.getElementById('appCandExp')) document.getElementById('appCandExp').value = u.experienceYears || 'Fresher';
+        if (document.getElementById('appConsentCheck')) document.getElementById('appConsentCheck').checked = false;
+
+        const destEmail = job.applicationEmail || this.defaultAppEmail || 'rozgarmitra3007@gmail.com';
+        const summaryBox = document.getElementById('jobApplySummaryBox');
+        if (summaryBox) {
+            summaryBox.innerHTML = `
+                <strong>${this.sanitizeHTML(job.title)}</strong> – ${this.sanitizeHTML(job.companyName)}<br>
+                <span class="text-sm text-secondary"><i class="fa-solid fa-location-dot"></i> ${this.sanitizeHTML(job.location)} | Salary: ${this.sanitizeHTML(job.salary)}</span><br>
+                <small class="text-muted"><i class="fa-solid fa-envelope text-primary"></i> Target Application Email: <strong>${this.sanitizeHTML(destEmail)}</strong></small>
+            `;
+        }
+
+        document.getElementById('jobApplyModal').classList.remove('hidden');
+    }
+
+    submitEmailApplication(event) {
+        event.preventDefault();
+
+        const jobId = document.getElementById('applyJobId').value;
+        const job = this.jobs.find(j => j.id === jobId);
+        if (!job) {
+            alert('Job vacancy not found.');
             return;
         }
+
+        const consent = document.getElementById('appConsentCheck')?.checked;
+        if (!consent) {
+            alert('Please accept the consent checkbox to share application details with the employer.');
+            return;
+        }
+
+        const name = document.getElementById('appCandName').value.trim();
+        const mobile = document.getElementById('appCandMobile').value.trim();
+        const email = document.getElementById('appCandEmail').value.trim();
+        const location = document.getElementById('appCandLocation').value.trim();
+        const qual = document.getElementById('appCandQual').value;
+        const exp = document.getElementById('appCandExp').value;
+
+        const destEmail = job.applicationEmail || this.defaultAppEmail || 'rozgarmitra3007@gmail.com';
+        const subject = encodeURIComponent(`Job Application – ${job.title} – ${name}`);
+        const bodyText = `Respected HR / Employer,
+
+I am submitting my job application for the vacancy of "${job.title}" at "${job.companyName}".
+
+CANDIDATE APPLICATION DETAILS:
+---------------------------------------------
+Full Name: ${name}
+Mobile Number: ${mobile}
+Email Address: ${email}
+Current Location: ${location}
+Highest Qualification: ${qual}
+Total Experience: ${exp}
+
+---------------------------------------------
+IMPORTANT RESUME ATTACHMENT NOTICE:
+I have attached my Resume / CV file to this email. Please inspect my attached Resume.
+
+Sent via Rozgaar Mitra Govt MSME Registered Consultancy (rozgaarmitra.com)`;
+
+        const mailtoUrl = `mailto:${destEmail}?subject=${subject}&body=${encodeURIComponent(bodyText)}`;
 
         const newApp = {
             id: 'app-' + Date.now(),
             jobId: job.id,
-            userId: this.currentUser.id,
-            candidateName: this.currentUser.name,
-            candidateEmail: this.currentUser.email,
-            candidateMobile: this.currentUser.mobile || 'Not specified',
-            candidateQual: this.currentUser.qualification || '12th Pass',
+            userId: this.currentUser ? this.currentUser.id : 'cand-' + Date.now(),
+            candidateName: name,
+            candidateEmail: email,
+            candidateMobile: mobile,
+            candidateQual: qual,
             appliedAt: new Date().toISOString().split('T')[0],
             status: 'Applied'
         };
-
         this.applications.push(newApp);
 
         this.notifications.push({
             id: 'notif-' + Date.now(),
-            userId: this.currentUser.id,
-            message: `Application submitted successfully for ${job.title} at ${job.companyName}!`,
+            userId: this.currentUser ? this.currentUser.id : 'all',
+            message: `Email application dispatched for ${job.title} at ${job.companyName}!`,
             type: 'APPLICATION_UPDATE',
             isRead: false,
             createdAt: new Date().toISOString().split('T')[0]
         });
 
         this.saveStateToStorage();
-        this.notifyRealtimeEvent('APPLICATION_SUBMITTED', newApp);
-        alert(`Application for "${job.title}" successfully submitted!`);
-        this.navigateTo('applications');
-    }
+        this.closeModal('jobApplyModal');
 
-    // CSV REPORT EXPORT ENGINE
-    exportCandidatesCSV() {
-        if (this.currentRole !== 'ADMIN') return;
-        if (!this.candidates || this.candidates.length === 0) {
-            alert('No candidate records available to export.');
-            return;
-        }
+        window.location.href = mailtoUrl;
 
-        let csv = 'Name,Email,Mobile,DOB,Gender,Qualification,Location,Experience,PrefCategory,PrefCity,ExpectedSalMin,ExpectedSalMax,Skills,Resume,Status\n';
-        this.candidates.forEach(c => {
-            csv += `"${c.name}","${c.email}","${c.mobile}","${c.dob || ''}","${c.gender || ''}","${c.qualification || ''}","${c.location || ''}","${c.experienceYears || ''}","${c.preferredCategory || ''}","${c.preferredCity || ''}","${c.expectedSalaryMin || ''}","${c.expectedSalaryMax || ''}","${(c.skills || []).join(';') || ''}","${c.resumeFileName || ''}","${c.isSuspended ? 'Suspended' : 'Active'}"\n`;
-        });
-
-        this.downloadCSVFile(csv, `rozgaarmitra_candidates_${Date.now()}.csv`);
-        this.logAdminAction('EXPORT_CSV', 'Exported Candidate Database to CSV');
-    }
-
-    exportApplicationsCSV() {
-        if (this.currentRole !== 'ADMIN') return;
-        if (!this.applications || this.applications.length === 0) {
-            alert('No application records available to export.');
-            return;
-        }
-
-        let csv = 'ApplicationID,CandidateName,CandidateEmail,CandidateMobile,JobTitle,AppliedDate,Status\n';
-        this.applications.forEach(a => {
-            const job = this.jobs.find(j => j.id === a.jobId) || { title: 'Job' };
-            csv += `"${a.id}","${a.candidateName}","${a.candidateEmail}","${a.candidateMobile}","${job.title}","${a.appliedAt}","${a.status}"\n`;
-        });
-
-        this.downloadCSVFile(csv, `rozgaarmitra_applications_${Date.now()}.csv`);
-        this.logAdminAction('EXPORT_CSV', 'Exported Applications Database to CSV');
-    }
-
-    exportJobsCSV() {
-        if (this.currentRole !== 'ADMIN') return;
-        if (!this.jobs || this.jobs.length === 0) {
-            alert('No job records available to export.');
-            return;
-        }
-
-        let csv = 'JobID,Title,Company,Category,Location,Salary,Qualification,Status,PostedDate\n';
-        this.jobs.forEach(j => {
-            csv += `"${j.id}","${j.title}","${j.companyName}","${j.category}","${j.location}","${j.salary}","${j.qualificationRequired}","${j.status}","${j.postedAt}"\n`;
-        });
-
-        this.downloadCSVFile(csv, `rozgaarmitra_jobs_${Date.now()}.csv`);
-        this.logAdminAction('EXPORT_CSV', 'Exported Jobs Database to CSV');
-    }
-
-    downloadCSVFile(content, filename) {
-        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.setAttribute('href', url);
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-
-    openBroadcastModal() {
-        if (this.currentRole !== 'ADMIN') return;
-        document.getElementById('broadcastTitle').value = '';
-        document.getElementById('broadcastMessage').value = '';
-        document.getElementById('broadcastModal').classList.remove('hidden');
-    }
-
-    sendBroadcastNotification(event) {
-        event.preventDefault();
-        if (this.currentRole !== 'ADMIN') return;
-
-        const title = document.getElementById('broadcastTitle').value;
-        const msg = document.getElementById('broadcastMessage').value;
-
-        const newNotif = {
-            id: 'notif-broad-' + Date.now(),
-            userId: 'all',
-            message: `📢 ${title}: ${msg}`,
-            type: 'ANNOUNCEMENT',
-            isRead: false,
-            createdAt: new Date().toISOString().split('T')[0]
-        };
-
-        this.notifications.unshift(newNotif);
-        this.saveStateToStorage();
-        this.closeModal('broadcastModal');
-        this.logAdminAction('BROADCAST_ALERT', `Sent broadcast notification to all candidates: ${title}`);
-        alert('📢 Broadcast Alert sent to all candidate inboxes successfully!');
-    }
-
-    renderAdminAuditLogs() {
-        if (this.currentRole !== 'ADMIN') return;
-        const tbody = document.getElementById('adminAuditLogTableBody');
-        if (!tbody) return;
-
-        if (!this.auditLogs || this.auditLogs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-muted">No admin audit logs recorded yet.</td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = this.auditLogs.map(l => `
-            <tr>
-                <td><small>${l.timestamp}</small></td>
-                <td><strong>${this.sanitizeHTML(l.adminEmail)}</strong></td>
-                <td><span class="badge badge-primary">${this.sanitizeHTML(l.actionType)}</span></td>
-                <td>${this.sanitizeHTML(l.details)}</td>
-            </tr>
-        `).join('');
-    }
-
-    renderManageCompaniesTable() {
-        if (this.currentRole !== 'ADMIN') return;
-        const tbody = document.getElementById('adminCompaniesTableBody');
-        if (!tbody) return;
-
-        if (!this.companies || this.companies.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-muted">No employer companies registered yet. Click "Add Employer" to add a company.</td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = this.companies.map(c => `
-            <tr>
-                <td><strong>${this.sanitizeHTML(c.name)}</strong></td>
-                <td>${this.sanitizeHTML(c.industry || 'Private Sector')}</td>
-                <td>${this.sanitizeHTML(c.location || 'India')}</td>
-                <td>${this.sanitizeHTML(c.email)}</td>
-                <td><span class="badge ${c.isApproved ? 'badge-success' : 'badge-danger'}">${c.isApproved ? 'Approved Employer' : 'Pending Verification'}</span></td>
-                <td>
-                    <button class="btn btn-${c.isApproved ? 'warning' : 'success'} btn-sm" onclick="app.toggleCompanyApproval('${c.id}')">
-                        ${c.isApproved ? 'Suspend' : 'Approve'}
-                    </button>
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    toggleCompanyApproval(compIdx) {
-        if (this.currentRole !== 'ADMIN') return;
-        const comp = this.companies.find(c => c.id === compIdx);
-        if (comp) {
-            comp.isApproved = !comp.isApproved;
-            this.saveStateToStorage();
-            this.renderManageCompaniesTable();
-            this.logAdminAction('COMPANY_STATUS_TOGGLE', `Updated approval status for ${comp.name} to ${comp.isApproved}`);
-            alert(`Employer "${comp.name}" verification status updated!`);
-        }
-    }
-
-    openNewCompanyModal() {
-        if (this.currentRole !== 'ADMIN') return;
-        const name = prompt('Enter Employer Company Name:');
-        if (!name) return;
-        const email = prompt('Enter Company Contact Email:');
-        if (!email) return;
-
-        const newComp = {
-            id: 'comp-' + Date.now(),
-            name: name,
-            email: email,
-            industry: 'Private Sector',
-            location: 'Delhi NCR',
-            isApproved: true
-        };
-
-        this.companies.push(newComp);
-        this.saveStateToStorage();
-        this.renderManageCompaniesTable();
-        this.logAdminAction('ADD_COMPANY', `Added new verified employer: ${name}`);
-        alert(`Employer Company "${name}" added and verified!`);
-    }
-
-    async deleteCandidate(candId) {
-        if (this.currentRole !== 'ADMIN') return;
-        const cand = this.candidates.find(c => c.id === candId);
-        if (!cand) return;
-
-        if (confirm(`Are you sure you want to permanently delete candidate profile for "${cand.name}" (${cand.email})?`)) {
-            this.candidates = this.candidates.filter(c => c.id !== candId);
-            this.applications = this.applications.filter(a => a.candidateEmail.toLowerCase() !== cand.email.toLowerCase());
-            this.saveStateToStorage();
-
-            try {
-                const getRes = await fetch(CLOUD_CANDIDATES_API_URL);
-                if (getRes.ok) {
-                    const list = await getRes.json();
-                    const match = list.find(c => c.email && c.email.toLowerCase() === cand.email.toLowerCase());
-                    if (match && match._id) {
-                        await fetch(`${CLOUD_CANDIDATES_API_URL}/${match._id}`, { method: 'DELETE' });
-                    }
-                }
-            } catch(e){}
-
-            this.filterCandidateDatabase();
-            this.renderAdminDashboard();
-            this.logAdminAction('DELETE_CANDIDATE', `Permanently deleted candidate profile ${cand.email}`);
-            alert(`Candidate "${cand.name}" deleted permanently.`);
-        }
-    }
-
-    toggleCandidateStatus(candId) {
-        if (this.currentRole !== 'ADMIN') return;
-        const cand = this.candidates.find(c => c.id === candId);
-        if (cand) {
-            cand.isSuspended = !cand.isSuspended;
-            this.saveStateToStorage();
-            this.pushCandidateToCloudAPI(cand);
-            this.filterCandidateDatabase();
-            this.logAdminAction('CANDIDATE_STATUS_TOGGLE', `Updated candidate ${cand.email} status to ${cand.isSuspended ? 'Suspended' : 'Active'}`);
-            alert(`Candidate account status updated to ${cand.isSuspended ? 'Suspended' : 'Active'}.`);
-        }
-    }
-
-    // FULL DETAILED CANDIDATE DATABASE FILTER & RENDER FOR ADMIN
-    filterCandidateDatabase() {
-        if (this.currentRole !== 'ADMIN') return;
-        const container = document.getElementById('candidateDatabaseContainer');
-        if (!container) return;
-
-        const searchKey = (document.getElementById('adminCandidateSearchKey')?.value || '').toLowerCase().trim();
-        const qualFilter = document.getElementById('adminCandidateQualFilter')?.value || '';
-        const cityFilter = document.getElementById('adminCandidateCityFilter')?.value || '';
-
-        let list = [...this.candidates];
-
-        if (searchKey) {
-            list = list.filter(c => 
-                (c.name && c.name.toLowerCase().includes(searchKey)) ||
-                (c.email && c.email.toLowerCase().includes(searchKey)) ||
-                (c.mobile && c.mobile.includes(searchKey)) ||
-                (c.skills && c.skills.some(s => s.toLowerCase().includes(searchKey)))
-            );
-        }
-
-        if (qualFilter) {
-            list = list.filter(c => c.qualification && c.qualification.includes(qualFilter));
-        }
-
-        if (cityFilter) {
-            list = list.filter(c => c.preferredCity && c.preferredCity.includes(cityFilter));
-        }
-
-        if (list.length === 0) {
-            container.innerHTML = `
-                <div class="card p-5 text-center text-muted">
-                    <i class="fa-solid fa-users-slash fa-2x mb-3 text-primary d-block"></i>
-                    <h3>No candidates found in database.</h3>
-                    <p class="mt-1">Candidates who register or save profiles will appear here with full details.</p>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = list.map(c => {
-            const isSusp = c.isSuspended;
-            const safeName = this.sanitizeHTML(c.name || 'Candidate');
-            const safeEmail = this.sanitizeHTML(c.email || 'N/A');
-            const safeMobile = this.sanitizeHTML(c.mobile || 'N/A');
-            const safeQual = this.sanitizeHTML(c.qualification || '12th Pass');
-            const safeExp = this.sanitizeHTML(c.experienceYears || 'Fresher');
-            const safePrefCat = this.sanitizeHTML(c.preferredCategory || 'Not specified');
-            const safePrefCity = this.sanitizeHTML(c.preferredCity || 'Not specified');
-            const safeSalMin = c.expectedSalaryMin ? `₹${c.expectedSalaryMin}` : 'N/A';
-            const safeSalMax = c.expectedSalaryMax ? `₹${c.expectedSalaryMax}` : 'N/A';
-
-            return `
-                <div class="card p-4 mb-3" style="border-left: 5px solid ${isSusp ? '#dc2626' : '#002b66'}; border-radius:10px;">
-                    <div class="flex-between mb-3 border-bottom pb-3">
-                        <div style="display:flex; align-items:center; gap:1rem;">
-                            ${c.photoUrl ? 
-                                `<img src="${c.photoUrl}" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid #002b66;">` : 
-                                `<div style="width:60px; height:60px; border-radius:50%; background:#002b66; color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.4rem;">${safeName.substring(0, 2).toUpperCase()}</div>`
-                            }
-                            <div>
-                                <h3 style="font-size:1.2rem; margin:0;">${safeName}</h3>
-                                <p class="text-secondary text-sm">
-                                    <i class="fa-solid fa-envelope text-primary"></i> <strong>${safeEmail}</strong> | 
-                                    <i class="fa-solid fa-phone text-success"></i> <strong>${safeMobile}</strong>
-                                </p>
-                                <span class="badge ${isSusp ? 'badge-danger' : 'badge-success'} mt-1">
-                                    ${isSusp ? '🚨 Account Suspended' : '✅ Active Registered Candidate'}
-                                </span>
-                            </div>
-                        </div>
-                        <div style="display:flex; gap:0.5rem;">
-                            <a href="tel:${safeMobile}" class="btn btn-outline btn-sm text-success" title="Call Candidate"><i class="fa-solid fa-phone"></i> Call</a>
-                            <a href="mailto:${safeEmail}" class="btn btn-outline btn-sm text-primary" title="Email Candidate"><i class="fa-solid fa-envelope"></i> Email</a>
-                            <button class="btn btn-outline btn-sm ${isSusp ? 'text-success' : 'text-warning'}" onclick="app.toggleCandidateStatus('${c.id}')">
-                                ${isSusp ? 'Unblock' : 'Suspend'}
-                            </button>
-                            <button class="btn btn-outline btn-sm text-danger" onclick="app.deleteCandidate('${c.id}')" title="Delete Profile"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </div>
-
-                    <div class="form-grid mb-3 text-sm">
-                        <div><strong>Academic Qualification:</strong> ${safeQual}</div>
-                        <div><strong>Total Experience:</strong> ${safeExp}</div>
-                        <div><strong>Date of Birth:</strong> ${c.dob || 'Not specified'}</div>
-                        <div><strong>Gender:</strong> ${c.gender || 'Not specified'}</div>
-                        <div><strong>Preferred Job Category:</strong> <span class="badge badge-primary">${safePrefCat}</span></div>
-                        <div><strong>Preferred Working City:</strong> ${safePrefCity}</div>
-                        <div><strong>Expected Salary Range:</strong> <strong class="text-success">${safeSalMin} - ${safeSalMax} / month</strong></div>
-                        <div><strong>Current Location:</strong> ${this.sanitizeHTML(c.location || 'India')}</div>
-                    </div>
-
-                    ${c.resumeFileName ? 
-                        `<div class="p-3 mb-3" style="background:#f1f5f9; border-radius:8px; display:flex; align-items:center; justify-content:space-between;">
-                            <div>
-                                <i class="fa-solid fa-file-pdf text-danger fa-lg"></i> 
-                                <strong>Uploaded Resume:</strong> ${this.sanitizeHTML(c.resumeFileName)} (${c.resumeFileSize || 'PDF'})
-                                <small class="text-muted d-block">Uploaded on ${c.resumeUploadDate || 'Saved'}</small>
-                            </div>
-                            <span class="badge badge-success"><i class="fa-solid fa-check"></i> Resume Attached</span>
-                         </div>` : 
-                        `<p class="text-muted text-sm mb-2"><i class="fa-solid fa-file-excel"></i> No resume document uploaded yet.</p>`
-                    }
-
-                    <div>
-                        <strong class="text-sm d-block mb-1">Candidate Skills & Competencies:</strong>
-                        <div class="job-skills-tags">
-                            ${(c.skills || []).length > 0 ? 
-                                (c.skills || []).map(s => `<span class="skill-tag">${this.sanitizeHTML(s)}</span>`).join('') :
-                                `<span class="text-muted text-sm">No skills added yet.</span>`
-                            }
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    updateProfileCompletion() {
-        const fields = [
-            document.getElementById('profName')?.value,
-            document.getElementById('profEmail')?.value,
-            document.getElementById('profMobile')?.value,
-            document.getElementById('profLocation')?.value,
-            document.getElementById('profDob')?.value,
-            document.getElementById('profQualification')?.value,
-            document.getElementById('profExperience')?.value,
-            document.getElementById('profPrefCategory')?.value,
-            document.getElementById('profPrefCity')?.value,
-            document.getElementById('profSalMin')?.value,
-            document.getElementById('profSalMax')?.value,
-            (this.selectedSkills && this.selectedSkills.length > 0) ? 'skills' : '',
-            this.candidatePhotoDataUrl ? 'photo' : '',
-            this.candidateResumeFileName ? 'resume' : ''
-        ];
-
-        const filledCount = fields.filter(f => f && String(f).trim().length > 0).length;
-        const totalFields = fields.length;
-        const percentage = Math.round((filledCount / totalFields) * 100);
-
-        const textEl = document.getElementById('profCompletionText');
-        const barEl = document.getElementById('profCompletionBar');
-        const subEl = document.getElementById('profCompletionSub');
-
-        if (textEl) textEl.textContent = `${percentage}%`;
-        if (barEl) barEl.style.width = `${percentage}%`;
-        if (subEl) {
-            if (percentage === 100) subEl.textContent = '🎉 Profile 100% Complete! Top priority ranking in candidate database.';
-            else subEl.textContent = `Completed ${filledCount} of ${totalFields} fields (${100 - percentage}% remaining)`;
-        }
-    }
-
-    handlePhotoUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        if (!file.type.startsWith('image/')) {
-            alert('Please select a valid image file (JPG, PNG)!');
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            this.candidatePhotoDataUrl = e.target.result;
-            const preview = document.getElementById('profPhotoPreview');
-            const placeholder = document.getElementById('profPhotoPlaceholder');
-            if (preview) {
-                preview.src = this.candidatePhotoDataUrl;
-                preview.classList.remove('hidden');
-            }
-            if (placeholder) placeholder.classList.add('hidden');
-            this.updateProfileCompletion();
-        };
-        reader.readAsDataURL(file);
-    }
-
-    handleResumeUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        this.candidateResumeFileName = file.name;
-        this.candidateResumeFileSize = (file.size / 1024).toFixed(1) + ' KB';
-        this.candidateResumeUploadDate = new Date().toISOString().split('T')[0];
-
-        this.renderResumeMetadataCard();
-        this.updateProfileCompletion();
-    }
-
-    renderResumeMetadataCard() {
-        const box = document.getElementById('profResumeMetadataBox');
-        const nameEl = document.getElementById('profResumeFileName');
-        const metaEl = document.getElementById('profResumeMetaDetails');
-
-        if (this.candidateResumeFileName && box) {
-            box.classList.remove('hidden');
-            if (nameEl) nameEl.innerHTML = `<i class="fa-solid fa-file-pdf text-danger"></i> <strong>${this.sanitizeHTML(this.candidateResumeFileName)}</strong>`;
-            if (metaEl) metaEl.textContent = `Uploaded on ${this.candidateResumeUploadDate || 'Today'} • ${this.candidateResumeFileSize || 'PDF/Doc'}`;
-        }
-    }
-
-    handleSkillSearch(event) {
-        const query = event.target.value.toLowerCase().trim();
-        this.renderSkillsTagSelector(query);
-
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            this.addCustomSkillFromInput();
-        }
-    }
-
-    addCustomSkillFromInput() {
-        const input = document.getElementById('skillSearchInput');
-        if (!input) return;
-        const newSkill = input.value.trim();
-        if (!newSkill) return;
-
-        if (!this.selectedSkills.includes(newSkill)) {
-            this.selectedSkills.push(newSkill);
-            if (!this.availableSkills.includes(newSkill)) {
-                this.availableSkills.push(newSkill);
-            }
-        }
-        input.value = '';
-        this.renderSelectedSkillChips();
-        this.renderSkillsTagSelector();
-        this.updateProfileCompletion();
-    }
-
-    toggleSkillSelection(skill) {
-        const idx = this.selectedSkills.indexOf(skill);
-        if (idx >= 0) {
-            this.selectedSkills.splice(idx, 1);
-        } else {
-            this.selectedSkills.push(skill);
-        }
-        this.renderSelectedSkillChips();
-        this.renderSkillsTagSelector();
-        this.updateProfileCompletion();
-    }
-
-    removeSkillChip(skill) {
-        const idx = this.selectedSkills.indexOf(skill);
-        if (idx >= 0) {
-            this.selectedSkills.splice(idx, 1);
-            this.renderSelectedSkillChips();
-            this.renderSkillsTagSelector();
-            this.updateProfileCompletion();
-        }
-    }
-
-    renderSelectedSkillChips() {
-        const container = document.getElementById('selectedSkillsContainer');
-        if (!container) return;
-
-        if (this.selectedSkills.length === 0) {
-            container.innerHTML = `<span class="text-muted text-sm">No skills selected yet. Search below or type custom skill.</span>`;
-            return;
-        }
-
-        container.innerHTML = this.selectedSkills.map(s => `
-            <div style="display:inline-flex; align-items:center; gap:0.4rem; background:#002b66; color:#ffffff; padding:0.35rem 0.75rem; border-radius:20px; font-size:0.85rem; font-weight:600;">
-                <span>${this.sanitizeHTML(s)}</span>
-                <i class="fa-solid fa-xmark" style="cursor:pointer; opacity:0.8;" onclick="app.removeSkillChip('${this.sanitizeHTML(s)}')" title="Remove skill"></i>
-            </div>
-        `).join('');
-    }
-
-    renderSkillsTagSelector(query = '') {
-        const container = document.getElementById('skillsTagContainer');
-        if (!container) return;
-
-        const filtered = query ? 
-            this.availableSkills.filter(s => s.toLowerCase().includes(query)) : 
-            this.availableSkills;
-
-        if (filtered.length === 0) {
-            container.innerHTML = `<p class="text-muted text-sm">No matching skill found. Click "+ Add Skill" above to add it!</p>`;
-            return;
-        }
-
-        container.innerHTML = filtered.map(s => {
-            const isSel = this.selectedSkills.includes(s);
-            return `
-                <div class="skill-chip ${isSel ? 'selected' : ''}" onclick="app.toggleSkillSelection('${this.sanitizeHTML(s)}')">
-                    ${isSel ? '<i class="fa-solid fa-check"></i> ' : ''}${this.sanitizeHTML(s)}
-                </div>
-            `;
-        }).join('');
-    }
-
-    saveProfileAsDraft() {
-        const updated = {
-            id: this.currentUser ? this.currentUser.id : 'cand-' + Date.now(),
-            name: this.sanitizeHTML(document.getElementById('profName').value) || this.currentUser?.name || 'Draft Candidate',
-            email: this.sanitizeHTML(document.getElementById('profEmail').value) || this.currentUser?.email || '',
-            mobile: this.sanitizeHTML(document.getElementById('profMobile').value) || this.currentUser?.mobile || '',
-            location: this.sanitizeHTML(document.getElementById('profLocation').value) || '',
-            dob: document.getElementById('profDob').value || '',
-            gender: document.getElementById('profGender').value || '',
-            qualification: document.getElementById('profQualification').value || '12th Pass',
-            experienceYears: document.getElementById('profExperience').value || 'Fresher',
-            preferredCategory: document.getElementById('profPrefCategory').value || '',
-            preferredCity: document.getElementById('profPrefCity').value || '',
-            expectedSalaryMin: document.getElementById('profSalMin').value || '',
-            expectedSalaryMax: document.getElementById('profSalMax').value || '',
-            skills: [...this.selectedSkills],
-            photoUrl: this.candidatePhotoDataUrl || this.currentUser?.photoUrl || null,
-            resumeFileName: this.candidateResumeFileName || this.currentUser?.resumeFileName || null,
-            resumeFileSize: this.candidateResumeFileSize || this.currentUser?.resumeFileSize || null,
-            resumeUploadDate: this.candidateResumeUploadDate || this.currentUser?.resumeUploadDate || null,
-            isDraft: true
-        };
-
-        this.currentUser = updated;
-        this.setStorageItem('rm_current_user', JSON.stringify(updated));
-
-        const idx = this.candidates.findIndex(c => c.email.toLowerCase() === updated.email.toLowerCase());
-        if (idx >= 0) this.candidates[idx] = updated;
-        else if (updated.email) this.candidates.push(updated);
-
-        this.saveStateToStorage();
-        this.pushCandidateToCloudAPI(updated);
-        this.notifyRealtimeEvent('CANDIDATE_REGISTERED', updated);
-        this.updateUserUI();
-        alert('💾 Profile saved as DRAFT successfully!\n\nYou can return anytime to complete and activate your profile.');
-    }
-
-    saveProfile(event) {
-        event.preventDefault();
-        const updated = {
-            id: this.currentUser ? this.currentUser.id : 'cand-' + Date.now(),
-            name: this.sanitizeHTML(document.getElementById('profName').value),
-            email: this.sanitizeHTML(document.getElementById('profEmail').value),
-            mobile: this.sanitizeHTML(document.getElementById('profMobile').value),
-            location: this.sanitizeHTML(document.getElementById('profLocation').value),
-            dob: document.getElementById('profDob').value,
-            gender: document.getElementById('profGender').value,
-            qualification: document.getElementById('profQualification').value,
-            experienceYears: document.getElementById('profExperience').value,
-            preferredCategory: document.getElementById('profPrefCategory').value,
-            preferredCity: document.getElementById('profPrefCity').value,
-            expectedSalaryMin: document.getElementById('profSalMin').value,
-            expectedSalaryMax: document.getElementById('profSalMax').value,
-            skills: [...this.selectedSkills],
-            photoUrl: this.candidatePhotoDataUrl || this.currentUser?.photoUrl || null,
-            resumeFileName: this.candidateResumeFileName || this.currentUser?.resumeFileName || null,
-            resumeFileSize: this.candidateResumeFileSize || this.currentUser?.resumeFileSize || null,
-            resumeUploadDate: this.candidateResumeUploadDate || this.currentUser?.resumeUploadDate || null,
-            isDraft: false
-        };
-
-        this.currentUser = updated;
-        this.setStorageItem('rm_current_user', JSON.stringify(updated));
-
-        const idx = this.candidates.findIndex(c => c.email.toLowerCase() === updated.email.toLowerCase());
-        if (idx >= 0) this.candidates[idx] = updated;
-        else this.candidates.push(updated);
-
-        this.saveStateToStorage();
-        this.pushCandidateToCloudAPI(updated);
-        this.notifyRealtimeEvent('CANDIDATE_REGISTERED', updated);
-        this.updateUserUI();
-        this.updateProfileCompletion();
-        alert('🎉 Candidate profile, photo, resume & job preferences updated and ACTIVATED!');
-    }
-
-    loadProfileIntoForm() {
-        if (!this.currentUser) return;
-        const u = this.currentUser;
-        if (document.getElementById('profName')) document.getElementById('profName').value = u.name || '';
-        if (document.getElementById('profEmail')) document.getElementById('profEmail').value = u.email || '';
-        if (document.getElementById('profMobile')) document.getElementById('profMobile').value = u.mobile || '';
-        if (document.getElementById('profLocation')) document.getElementById('profLocation').value = u.location || '';
-        if (document.getElementById('profDob')) document.getElementById('profDob').value = u.dob || '';
-        if (document.getElementById('profGender')) document.getElementById('profGender').value = u.gender || '';
-        if (document.getElementById('profQualification')) document.getElementById('profQualification').value = u.qualification || '';
-        if (document.getElementById('profExperience')) document.getElementById('profExperience').value = u.experienceYears || '';
-        if (document.getElementById('profPrefCategory')) document.getElementById('profPrefCategory').value = u.preferredCategory || '';
-        if (document.getElementById('profPrefCity')) document.getElementById('profPrefCity').value = u.preferredCity || '';
-        if (document.getElementById('profSalMin')) document.getElementById('profSalMin').value = u.expectedSalaryMin || '';
-        if (document.getElementById('profSalMax')) document.getElementById('profSalMax').value = u.expectedSalaryMax || '';
-
-        if (u.photoUrl) {
-            this.candidatePhotoDataUrl = u.photoUrl;
-            const preview = document.getElementById('profPhotoPreview');
-            const placeholder = document.getElementById('profPhotoPlaceholder');
-            if (preview) {
-                preview.src = u.photoUrl;
-                preview.classList.remove('hidden');
-            }
-            if (placeholder) placeholder.classList.add('hidden');
-        }
-
-        if (u.resumeFileName) {
-            this.candidateResumeFileName = u.resumeFileName;
-            this.candidateResumeFileSize = u.resumeFileSize || 'Uploaded Document';
-            this.candidateResumeUploadDate = u.resumeUploadDate || 'Saved';
-            this.renderResumeMetadataCard();
-        }
-
-        this.renderSelectedSkillChips();
-        this.renderSkillsTagSelector();
-        this.updateProfileCompletion();
-    }
-
-    // EMAIL OTP FLOW FOR LOGIN
-    async sendEmailOtpCode() {
-        const email = document.getElementById('otpEmailInput').value;
-        if (!email || !email.includes('@')) {
-            alert('Please enter a valid candidate email address!');
-            return;
-        }
-
-        this.generatedEmailOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        this.emailOtpExpiryTime = Date.now() + (5 * 60 * 1000);
-        
-        const codeGroup = document.getElementById('otpEmailCodeGroup');
-        const codeInput = document.getElementById('otpEmailCode');
-        if (codeGroup) codeGroup.classList.remove('hidden');
-        if (codeInput) {
-            codeInput.value = '';
-            setTimeout(() => codeInput.focus(), 150);
-        }
-
-        try {
-            fetch('/api/send-otp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email, otp: this.generatedEmailOtp })
-            }).catch(e => console.warn('Email dispatch notice:', e));
-        } catch(e){}
-
-        alert(`📧 Verification OTP Code Sent!\n\nA 6-digit verification code has been dispatched to ${email}.\n\nEnter the 6-digit OTP code below to verify & login instantly!`);
-    }
-
-    handleEmailOtpLogin(event) {
-        if (event && event.preventDefault) event.preventDefault();
-        const email = document.getElementById('otpEmailInput').value;
-        const code = document.getElementById('otpEmailCode').value;
-
-        if (!this.generatedEmailOtp) {
-            alert('Please click "Get Email OTP" first to receive your verification code!');
-            return;
-        }
-
-        if (Date.now() > this.emailOtpExpiryTime) {
-            this.generatedEmailOtp = null;
-            alert('🚨 OTP Expired! Verification codes expire after 5 minutes. Please request a new OTP.');
-            return;
-        }
-
-        if (code !== this.generatedEmailOtp) {
-            alert('Incorrect Email OTP code! Please enter the exact 6-digit OTP sent to your email.');
-            return;
-        }
-
-        this.generatedEmailOtp = null;
-
-        let u = this.candidates.find(c => c.email.toLowerCase() === email.toLowerCase());
-        if (!u) {
-            u = { id: 'cand-' + Date.now(), name: email.split('@')[0], email: email.toLowerCase(), mobile: 'Pending Mobile', qualification: '12th Pass', role: 'SEEKER', skills: ['Tally Prime', 'MS Excel'] };
-            this.candidates.push(u);
-        }
-
-        if (u.isSuspended) {
-            alert('🚨 Account Suspended!\n\nYour candidate profile is currently suspended by the Admin. Please contact support@rozgaarmitra.com.');
-            return;
-        }
-
-        this.currentUser = u;
-        this.setStorageItem('rm_current_user', JSON.stringify(u));
-        this.saveStateToStorage();
-        this.pushCandidateToCloudAPI(u);
-        this.updateUserUI();
-        this.closeModal('authModal');
-        alert(`🎉 Email OTP Verification Successful! Welcome, ${u.name || email}!`);
-        this.navigateTo('profile');
-    }
-
-    // REGISTRATION EMAIL OTP & DUPLICATE ACCOUNT PREVENTION
-    async sendRegEmailOtpCode() {
-        const email = document.getElementById('regEmail').value;
-        const mobile = document.getElementById('regMobile').value;
-
-        if (!email || !email.includes('@')) {
-            alert('Please enter a valid candidate email address first!');
-            return;
-        }
-
-        const existingEmail = this.candidates.find(c => c.email.toLowerCase() === email.toLowerCase());
-        if (existingEmail) {
-            alert(`ℹ️ Account Already Exists!\n\nAn account with email "${email}" ALREADY exists.\n\nUpdating registration details and syncing profile to Cloud Database...`);
-            this.pushCandidateToCloudAPI(existingEmail);
-        }
-
-        this.generatedRegEmailOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        this.regEmailOtpExpiryTime = Date.now() + (5 * 60 * 1000);
-        
-        const codeGroup = document.getElementById('regOtpCodeGroup');
-        const codeInput = document.getElementById('regOtpCode');
-        if (codeGroup) codeGroup.classList.remove('hidden');
-        if (codeInput) {
-            codeInput.value = '';
-            setTimeout(() => codeInput.focus(), 150);
-        }
-
-        try {
-            fetch('/api/send-otp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email, otp: this.generatedRegEmailOtp })
-            }).catch(e => console.warn('Email dispatch notice:', e));
-        } catch(e){}
-
-        alert(`📧 Registration Verification Code Sent!\n\nA 6-digit verification code has been dispatched to ${email}.\n\nEnter the 6-digit OTP code below to verify & register!`);
-    }
-
-    handleRegister(event) {
-        if (event && event.preventDefault) event.preventDefault();
-        const name = document.getElementById('regName').value;
-        const email = document.getElementById('regEmail').value;
-        const mobile = document.getElementById('regMobile').value;
-        const otpCode = document.getElementById('regOtpCode').value;
-
-        if (!this.generatedRegEmailOtp) {
-            alert('Please click "Verify Email" first to receive your 6-digit registration OTP code!');
-            return;
-        }
-
-        if (Date.now() > this.regEmailOtpExpiryTime) {
-            this.generatedRegEmailOtp = null;
-            alert('🚨 OTP Expired! Registration verification codes expire after 5 minutes. Please click "Verify Email" again.');
-            return;
-        }
-
-        if (otpCode !== this.generatedRegEmailOtp) {
-            alert('Incorrect Email Verification OTP code! Please enter the exact 6-digit OTP sent to your email.');
-            return;
-        }
-
-        this.generatedRegEmailOtp = null;
-
-        let u = this.candidates.find(c => c.email.toLowerCase() === email.toLowerCase());
-        if (u) {
-            u.name = this.sanitizeHTML(name);
-            if (mobile) u.mobile = mobile;
-        } else {
-            u = { 
-                id: 'cand-' + Date.now(), 
-                name: this.sanitizeHTML(name), 
-                email: email.toLowerCase(), 
-                mobile: mobile, 
-                qualification: '12th Pass', 
-                role: 'SEEKER', 
-                skills: ['Customer Support', 'MS Excel'],
-                isSuspended: false
-            };
-            this.candidates.push(u);
-        }
-
-        this.currentUser = u;
-        this.setStorageItem('rm_current_user', JSON.stringify(u));
-        this.saveStateToStorage();
-        this.pushCandidateToCloudAPI(u);
-        this.updateUserUI();
-        this.closeModal('authModal');
-        alert(`🎉 Candidate Account & Email Verification Successful!\n\nProfile synced to Cloud Database! Welcome, ${name}!`);
-        this.navigateTo('profile');
-    }
-
-    logout() {
-        this.currentUser = null;
-        this.clearAdminSession();
-        try { localStorage.removeItem('rm_current_user'); } catch(e){}
-        this.updateUserUI();
-        alert('Logged out successfully.');
-        this.navigateTo('home');
-    }
-
-    updateUserUI() {
-        const exitAdminBtn = document.getElementById('adminExitHeaderBtn');
-        const authBox = document.getElementById('authBox');
-
-        if (this.currentRole === 'ADMIN') {
-            document.querySelectorAll('.seeker-only').forEach(e => e.classList.add('hidden'));
-            document.querySelectorAll('.admin-only').forEach(e => e.classList.remove('hidden'));
-            if (exitAdminBtn) exitAdminBtn.classList.remove('hidden');
-            if (authBox) authBox.classList.add('hidden');
-            
-            if (this.currentView === 'home' || this.currentView === 'profile') {
-                this.navigateTo('admin-dashboard');
-            }
-            return;
-        }
-
-        if (exitAdminBtn) exitAdminBtn.classList.add('hidden');
-
-        if (this.currentUser) {
-            document.querySelectorAll('.seeker-only').forEach(e => e.classList.remove('hidden'));
-            document.querySelectorAll('.admin-only').forEach(e => e.classList.add('hidden'));
-            if (authBox) authBox.classList.add('hidden');
-            document.getElementById('userProfileMenu')?.classList.remove('hidden');
-            
-            const avatarEl = document.getElementById('navAvatar');
-            if (avatarEl) {
-                if (this.currentUser.photoUrl) {
-                    avatarEl.innerHTML = `<img src="${this.currentUser.photoUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
-                } else {
-                    avatarEl.textContent = this.currentUser.name.substring(0, 2).toUpperCase();
-                }
-            }
-            if (document.getElementById('navUserName')) document.getElementById('navUserName').textContent = this.currentUser.name;
-        } else {
-            document.querySelectorAll('.seeker-only').forEach(e => e.classList.add('hidden'));
-            document.querySelectorAll('.admin-only').forEach(e => e.classList.add('hidden'));
-            if (authBox) authBox.classList.remove('hidden');
-            document.getElementById('userProfileMenu')?.classList.add('hidden');
-        }
+        alert(`📧 Application Email Prepared!\n\nYour email app is opening to send your application to ${destEmail}.\n\nIMPORTANT: Please attach your Resume file to the email before sending!`);
     }
 
     openNewJobModal() {
         if (this.currentRole !== 'ADMIN') return;
         document.getElementById('jobEditId').value = '';
         document.getElementById('jobForm').reset();
+        document.getElementById('jobStatus').value = 'DRAFT'; // Default status is ALWAYS Draft!
+        document.getElementById('jobCompanyVerified').checked = false;
         document.getElementById('jobModalTitle').textContent = 'Post New Private Job';
         document.getElementById('jobModal').classList.remove('hidden');
     }
@@ -1800,10 +1080,14 @@ class RozgaarMitraApp {
         document.getElementById('jobEditId').value = job.id;
         document.getElementById('jobTitle').value = job.title;
         document.getElementById('jobCompany').value = job.companyName;
+        document.getElementById('jobStatus').value = (job.status || 'DRAFT').toUpperCase();
         document.getElementById('jobCategory').value = job.category;
         document.getElementById('jobLocation').value = job.location;
         document.getElementById('jobSalary').value = job.salary;
         document.getElementById('jobQualification').value = job.qualificationRequired;
+        document.getElementById('jobAppEmail').value = job.applicationEmail || '';
+        document.getElementById('jobExpiryDate').value = job.expiryDate || '';
+        document.getElementById('jobCompanyVerified').checked = !!job.isCompanyVerified;
         document.getElementById('jobDesc').value = job.description;
 
         document.getElementById('jobModalTitle').textContent = 'Edit Job Details';
@@ -1846,18 +1130,20 @@ class RozgaarMitraApp {
         const job = this.jobs.find(j => j.id === jobId);
         if (!job) return;
 
-        if (job.status === 'HIRING_CLOSED' || job.status === 'VACANCY_FULL') {
-            job.status = 'PUBLISHED';
-            alert(`Job "${job.title}" is now RE-OPENED for hiring!`);
+        if (job.status === 'PUBLISHED') {
+            job.status = 'PAUSED';
+            job.isActive = false;
+            alert(`Job "${job.title}" marked as PAUSED! Hidden from public website.`);
         } else {
-            job.status = 'HIRING_CLOSED';
-            alert(`Job "${job.title}" marked as "Vacancy Full / Hiring Closed"! Candidate applications disabled.`);
+            job.status = 'PUBLISHED';
+            job.isActive = true;
+            alert(`Job "${job.title}" is now PUBLISHED and live on public website!`);
         }
 
         this.saveStateToStorage();
         this.renderAdminJobsTable();
         this.renderFeaturedJobs();
-        this.logAdminAction('TOGGLE_HIRING_STATUS', `Toggled hiring status for "${job.title}" to ${job.status}`);
+        this.logAdminAction('TOGGLE_HIRING_STATUS', `Toggled status for "${job.title}" to ${job.status}`);
     }
 
     saveJob(event) {
@@ -1867,32 +1153,53 @@ class RozgaarMitraApp {
         const editId = document.getElementById('jobEditId').value;
         const title = this.sanitizeHTML(document.getElementById('jobTitle').value);
         const companyName = this.sanitizeHTML(document.getElementById('jobCompany').value);
+        const status = document.getElementById('jobStatus').value.toUpperCase();
         const category = document.getElementById('jobCategory').value;
         const location = this.sanitizeHTML(document.getElementById('jobLocation').value);
         const salary = this.sanitizeHTML(document.getElementById('jobSalary').value);
         const qualificationRequired = document.getElementById('jobQualification').value;
+        const applicationEmail = document.getElementById('jobAppEmail').value.trim();
+        const expiryDate = document.getElementById('jobExpiryDate').value;
+        const isCompanyVerified = document.getElementById('jobCompanyVerified').checked;
         const description = this.sanitizeHTML(document.getElementById('jobDesc').value);
+
+        const today = new Date().toISOString().split('T')[0];
 
         if (editId) {
             const idx = this.jobs.findIndex(j => j.id === editId);
             if (idx >= 0) {
+                const existing = this.jobs[idx];
+                const isNowPublished = status === 'PUBLISHED';
+
                 this.jobs[idx] = {
-                    ...this.jobs[idx],
-                    title, companyName, category, location, salary, qualificationRequired, description
+                    ...existing,
+                    title, companyName, status, category, location, salary, qualificationRequired,
+                    applicationEmail, expiryDate, isCompanyVerified, description,
+                    isActive: isNowPublished,
+                    publishedDate: isNowPublished ? (existing.publishedDate || today) : null,
+                    lastUpdatedDate: today,
+                    publishedBy: this.officialAdminEmail
                 };
-                this.logAdminAction('UPDATE_JOB', `Updated job details for "${title}"`);
-                alert('Job updated successfully!');
+                this.logAdminAction('UPDATE_JOB', `Updated job "${title}" (Status: ${status})`);
+                alert(`Job "${title}" updated successfully! (Status: ${status})`);
             }
         } else {
+            const isPublished = status === 'PUBLISHED';
             const newJob = {
-                id: 'admin-job-' + Date.now(),
-                companyName, title, category, location, salary, qualificationRequired, experienceRequired: '1-2 Years', positions: 2,
+                id: 'job-' + Date.now(),
+                companyName, title, status, category, location, salary, qualificationRequired,
+                experienceRequired: '1-2 Years', positions: 2,
                 requiredSkills: ['Customer Support', 'MS Excel'],
-                description, status: 'PUBLISHED', postedAt: new Date().toISOString().split('T')[0]
+                applicationEmail, expiryDate, isCompanyVerified, description,
+                isActive: isPublished,
+                postedAt: today,
+                publishedDate: isPublished ? today : null,
+                lastUpdatedDate: today,
+                publishedBy: this.officialAdminEmail
             };
             this.jobs.unshift(newJob);
-            this.logAdminAction('POST_JOB', `Posted new live job vacancy "${title}" for ${companyName}`);
-            alert('New job posted successfully!');
+            this.logAdminAction('POST_JOB', `Created job "${title}" for ${companyName} (Status: ${status})`);
+            alert(`Job "${title}" created successfully! Status: ${status}. ${isPublished ? 'Live on Website!' : 'Hidden from public website until Published.'}`);
         }
 
         this.saveStateToStorage();
@@ -1901,41 +1208,108 @@ class RozgaarMitraApp {
         this.renderFeaturedJobs();
     }
 
+    changeJobStatus(jobId, newStatus) {
+        if (this.currentRole !== 'ADMIN') return;
+        const job = this.jobs.find(j => j.id === jobId);
+        if (!job) return;
+
+        const statusUpper = newStatus.toUpperCase();
+        job.status = statusUpper;
+        job.isActive = statusUpper === 'PUBLISHED';
+        job.lastUpdatedDate = new Date().toISOString().split('T')[0];
+
+        if (statusUpper === 'PUBLISHED' && !job.publishedDate) {
+            job.publishedDate = new Date().toISOString().split('T')[0];
+        }
+
+        this.saveStateToStorage();
+        this.renderAdminJobsTable();
+        this.renderFeaturedJobs();
+        this.logAdminAction('CHANGE_JOB_STATUS', `Changed status for "${job.title}" to ${statusUpper}`);
+        alert(`Status for "${job.title}" changed to ${statusUpper}. ${statusUpper === 'PUBLISHED' ? 'Now Live on Public Website!' : 'Hidden from Public Website.'}`);
+    }
+
+    openAdminSettingsModal() {
+        if (this.currentRole !== 'ADMIN') return;
+        const input = document.getElementById('settingDefaultAppEmail');
+        if (input) input.value = this.defaultAppEmail || 'rozgarmitra3007@gmail.com';
+        document.getElementById('adminSettingsModal').classList.remove('hidden');
+    }
+
+    saveAdminSettings(event) {
+        event.preventDefault();
+        if (this.currentRole !== 'ADMIN') return;
+        const email = document.getElementById('settingDefaultAppEmail').value.trim();
+        if (!email || !email.includes('@')) {
+            alert('Please enter a valid email address.');
+            return;
+        }
+        this.defaultAppEmail = email;
+        this.setStorageItem('rm_default_app_email', email);
+        this.closeModal('adminSettingsModal');
+        this.logAdminAction('UPDATE_ADMIN_SETTINGS', `Updated default application receiving email to ${email}`);
+        alert(`Admin Settings Saved! Default application email updated to: ${email}`);
+    }
+
     renderAdminJobsTable() {
         if (this.currentRole !== 'ADMIN') return;
         const tbody = document.getElementById('adminJobsTableBody');
         if (!tbody) return;
 
-        if (this.jobs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-muted">No jobs posted yet. Click "Post New Job" above to add vacancies.</td></tr>`;
+        if (!this.jobs || this.jobs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center p-4 text-muted">No vacancies created yet. Click "Post New Job" above to create a vacancy draft.</td></tr>`;
             return;
         }
 
+        const statusBadgeClass = {
+            'DRAFT': 'badge-secondary',
+            'PENDING': 'badge-warning',
+            'PUBLISHED': 'badge-success',
+            'PAUSED': 'badge-info',
+            'EXPIRED': 'badge-danger',
+            'REJECTED': 'badge-danger'
+        };
+
+        const today = new Date().toISOString().split('T')[0];
+
         tbody.innerHTML = this.jobs.map(j => {
-            const isClosed = j.status === 'HIRING_CLOSED' || j.status === 'VACANCY_FULL';
+            const statusUpper = (j.status || 'DRAFT').toUpperCase();
+            const isExpired = j.expiryDate && j.expiryDate < today;
+            const displayStatus = isExpired ? 'EXPIRED' : statusUpper;
+            const badgeClass = statusBadgeClass[displayStatus] || 'badge-secondary';
+            const isVerified = j.isCompanyVerified ? `<span class="badge badge-success text-xs"><i class="fa-solid fa-shield-check"></i> Verified</span>` : '';
+
             return `
                 <tr>
-                    <td><strong>${this.sanitizeHTML(j.title)}</strong><br><small>${this.sanitizeHTML(j.companyName)}</small></td>
+                    <td>
+                        <strong>${this.sanitizeHTML(j.title)}</strong> ${isVerified}<br>
+                        <small class="text-secondary">${this.sanitizeHTML(j.companyName)}</small>
+                    </td>
                     <td>${this.sanitizeHTML(j.category)}</td>
                     <td>${this.sanitizeHTML(j.location)}</td>
                     <td>${this.sanitizeHTML(j.salary)}</td>
                     <td>
-                        <span class="badge ${isClosed ? 'badge-danger' : 'badge-success'}">
-                            ${isClosed ? 'Vacancy Full / Hiring Closed' : 'Active Hiring'}
-                        </span>
+                        <span class="badge ${badgeClass}">${displayStatus}</span>
+                        <br><small class="text-muted" style="font-size:0.75rem;">Exp: ${j.expiryDate || 'No Limit'}</small>
+                    </td>
+                    <td>
+                        <select class="form-control form-control-sm" style="width:auto; display:inline-block;" onchange="app.changeJobStatus('${j.id}', this.value)">
+                            <option value="DRAFT" ${statusUpper === 'DRAFT' ? 'selected' : ''}>Draft</option>
+                            <option value="PENDING" ${statusUpper === 'PENDING' ? 'selected' : ''}>Pending Review</option>
+                            <option value="PUBLISHED" ${statusUpper === 'PUBLISHED' ? 'selected' : ''}>Publish Live</option>
+                            <option value="PAUSED" ${statusUpper === 'PAUSED' ? 'selected' : ''}>Pause</option>
+                            <option value="EXPIRED" ${statusUpper === 'EXPIRED' ? 'selected' : ''}>Expired</option>
+                            <option value="REJECTED" ${statusUpper === 'REJECTED' ? 'selected' : ''}>Rejected</option>
+                        </select>
                     </td>
                     <td>
                         <button class="btn btn-outline btn-sm mr-1" onclick="app.editJob('${j.id}')" title="Edit Job"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-                        <button class="btn btn-${isClosed ? 'success' : 'warning'} btn-sm mr-1" onclick="app.toggleHiringClosed('${j.id}')">
-                            <i class="fa-solid fa-lock-open" : 'lock'}></i> ${isClosed ? 'Re-open' : 'Close Vacancy'}
-                        </button>
-                        <button class="btn btn-outline btn-sm text-danger" onclick="app.deleteJob('${j.id}')" title="Delete Job"><i class="fa-solid fa-trash"></i> Delete</button>
+                        <button class="btn btn-outline btn-sm text-danger" onclick="app.deleteJob('${j.id}')" title="Delete Job"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
             `;
         }).join('');
     }
-
     renderApplicationsView() {
         const container = document.getElementById('applicationsContainer');
         if (!container) return;
